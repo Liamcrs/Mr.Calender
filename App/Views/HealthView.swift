@@ -17,17 +17,19 @@ struct HealthView: View {
                     isConnectingHealth = true
                     defer { isConnectingHealth = false }
                     do {
-                        let result = try await HealthKitService().requestAccess()
+                        let health = HealthKitService()
+                        let result = try await health.requestAccess()
+                        let todayWorkouts = try await health.workouts(on: Date())
                         switch result {
                         case .authorizationRequested:
-                            healthStatus = "已完成授权请求；请在系统健康权限页允许读取运动记录。"
-                            store.banner = "Apple 健康授权请求已完成"
+                            healthStatus = "授权完成，今日已读取到 \(todayWorkouts.count) 条运动记录。"
+                            store.banner = "Apple 健康已连接"
                         case .alreadyHandled:
-                            healthStatus = "授权请求已处理。如未读取到运动记录，请到“健康 App → 头像 → App 与服务 → Mr. Calender”检查权限。"
-                            store.banner = "Apple 健康权限已处理"
+                            healthStatus = "健康数据查询完成，今日读取到 \(todayWorkouts.count) 条运动记录。若应有记录但为 0，请到“健康 App → 头像 → App 与服务 → Mr. Calender”检查权限。"
+                            store.banner = "Apple 健康已连接"
                         case .unknown:
-                            healthStatus = "系统暂时无法判断授权状态，请到健康 App 检查 Mr. Calender 的运动记录权限。"
-                            store.banner = "请在健康 App 中确认权限"
+                            healthStatus = "健康数据查询完成，今日读取到 \(todayWorkouts.count) 条运动记录；系统授权状态暂时无法判断。"
+                            store.banner = "Apple 健康查询完成"
                         }
                     } catch {
                         healthStatus = "连接失败：\(error.localizedDescription)"
