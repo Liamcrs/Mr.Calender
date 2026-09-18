@@ -3,7 +3,7 @@
 ## Passed
 
 - `sh scripts/check-core.sh` → `PASS: 18 core behavioral checks` and `PASS: ICS behavioral checks`。
-- `swift test --disable-sandbox --filter MrCalenderCoreTests` → 25 tests passed。
+- `swift test --disable-sandbox --filter MrCalenderCoreTests` → 26 tests passed。
 - `swiftc -frontend -parse` on changed Swift sources → exit 0。
 - `plutil -lint Config/Info.plist Config/MrCalender.entitlements Config/PrivacyInfo.xcprivacy MrCalender.xcodeproj/project.pbxproj` → all OK。
 - `git diff --check` → no output。
