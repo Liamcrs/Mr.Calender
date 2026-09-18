@@ -2,6 +2,7 @@
 
 ## Passed
 
+- `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild -project MrCalender.xcodeproj -scheme MrCalender -sdk iphonesimulator -configuration Debug CODE_SIGNING_ALLOWED=NO build` → `** BUILD SUCCEEDED **`。Xcode 26.6 使用 iPhoneSimulator 26.5 SDK 完成 arm64/x86_64 模拟器构建。
 - `sh scripts/check-core.sh` → `PASS: 18 core behavioral checks` and `PASS: ICS behavioral checks`。
 - `swiftc -typecheck Sources/MrCalenderCore/*.swift Tests/Portable/ICSChecks.swift Tests/Portable/main.swift` → exit 0。
 - `plutil -lint Config/Info.plist Config/MrCalender.entitlements Config/PrivacyInfo.xcprivacy MrCalender.xcodeproj/project.pbxproj` → all OK。
@@ -10,9 +11,9 @@
 
 ## Environment limits
 
-- 当前机器只有 `/Library/Developer/CommandLineTools`，没有完整 Xcode 和 iOS SDK；`swift test` 在 `import XCTest` 处失败，报告为 `no such module 'XCTest'`。
+- 完整 Xcode 已安装并接受许可；系统全局 active developer directory 现在为 `/Applications/Xcode.app/Contents/Developer`。
 - 未在模拟器/真机验证 SwiftUI、UserNotifications、HealthKit、文件选择器、钥匙串和 DeepSeek 网络请求。
-- `mas install` 能查询 Xcode 26.2，但安装需要当前 macOS 用户的 sudo 密码，因此没有完成安装。
+- 构建日志包含 CoreSimulatorService 连接警告，但不影响无模拟器设备选择的编译产物；启动模拟器仍需在 Xcode/Simulator 中初始化运行时。
 
 ## First device checks
 
