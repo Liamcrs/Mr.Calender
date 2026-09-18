@@ -47,15 +47,7 @@ public enum SchedulePlanner {
         }
         let profile = state.profile
         if profile.waterEnabled {
-            let interval = max(30, profile.waterIntervalMinutes)
-            var date = max(start, calendar.date(bySettingHour: 9, minute: 0, second: 0, of: start)!)
-            while date < end && result.count < 500 {
-                if !isBusy(date, events: state.events) {
-                    let id = "water-\(Int(date.timeIntervalSince1970 / Double(interval * 60)))"
-                    result.append(.init(id: id, kind: .water, title: "喝水", detail: "约 \(profile.waterAmountML) ml", date: date))
-                }
-                date = date.addingTimeInterval(Double(interval * 60))
-            }
+            result.append(contentsOf: waterReminders(state, from: start, to: end, calendar: calendar))
         }
         if profile.sleepEnabled {
             var morning = calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: start))!
@@ -72,6 +64,34 @@ public enum SchedulePlanner {
             case .snoozed: guard let date = record.snoozedUntil, date < end else { return reminder }; return .init(id: reminder.id, kind: reminder.kind, title: reminder.title, detail: reminder.detail, date: date)
             }
         }.sorted { $0.date < $1.date }
+    }
+
+    private static func waterReminders(_ state: AppSnapshot, from start: Date, to end: Date, calendar: Calendar) -> [PlannedReminder] {
+        let interval = TimeInterval(max(30, state.profile.waterIntervalMinutes) * 60)
+        let dayStart = calendar.startOfDay(for: start)
+        var morning = dayStart
+        var result: [PlannedReminder] = []
+        while morning < end && result.count < 500 {
+            let wake = sleepPlan(forMorning: morning, profile: state.profile, events: state.events, calendar: calendar).wakeAt
+            let nextMorning = calendar.date(byAdding: .day, value: 1, to: morning)!
+            let bedtime = sleepPlan(forMorning: nextMorning, profile: state.profile, events: state.events, calendar: calendar).bedAt
+            let windowStart = max(start, wake)
+            let windowEnd = min(end, bedtime)
+            if windowStart < windowEnd {
+                let elapsed = max(0, windowStart.timeIntervalSince(wake))
+                let steps = ceil(elapsed / interval)
+                var date = wake.addingTimeInterval(steps * interval)
+                while date < windowEnd && result.count < 500 {
+                    if !isBusy(date, events: state.events) {
+                        let id = "water-\(Int(date.timeIntervalSince1970 / interval))"
+                        result.append(.init(id: id, kind: .water, title: "喝水", detail: "约 \(state.profile.waterAmountML) ml", date: date))
+                    }
+                    date = date.addingTimeInterval(interval)
+                }
+            }
+            morning = nextMorning
+        }
+        return result
     }
 
     private static func isBusy(_ date: Date, events: [CalendarEvent]) -> Bool { events.contains { !$0.isAllDay && $0.startsAt <= date && date < $0.endsAt } }

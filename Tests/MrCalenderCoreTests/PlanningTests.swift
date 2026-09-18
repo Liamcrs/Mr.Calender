@@ -23,6 +23,17 @@ final class PlanningTests: XCTestCase {
         state.reminderRecords = [.init(id: water[0].id, status: .done)]
         XCTAssertFalse(SchedulePlanner.reminders(state, from: start, to: end, calendar: cal).contains { $0.id == water[0].id })
     }
+    func testWaterStopsBeforeSuggestedBedtime() {
+        var state = AppSnapshot()
+        state.profile.waterEnabled = true
+        state.profile.waterIntervalMinutes = 120
+        state.profile.wakeMinute = 7 * 60 + 30
+        state.profile.preparationMinutes = 60
+        state.events = [CalendarEvent(title: "次日早课", startsAt: date("2026-09-19T07:00:00"), endsAt: date("2026-09-19T09:00:00"))]
+        let reminders = SchedulePlanner.reminders(state, from: date("2026-09-18T00:00:00"), to: date("2026-09-19T00:00:00"), calendar: cal)
+            .filter { $0.kind == .water }
+        XCTAssertFalse(reminders.contains { $0.date >= date("2026-09-18T22:00:00") })
+    }
     func testSnoozePreservesIdentityAndMovesTime() {
         var state = AppSnapshot()
         state.profile.waterEnabled = false; state.profile.sleepEnabled = false
