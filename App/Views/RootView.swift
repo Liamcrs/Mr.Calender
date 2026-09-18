@@ -24,6 +24,6 @@ struct OnboardingView: View {
             Stepper("睡眠目标：\(sleep, specifier: "%.1f") 小时", value: $sleep, in: 4...12, step: 0.5)
             DatePicker("常规起床时间", selection: $wake, displayedComponents: .hourAndMinute)
             TextField("过敏或需要避开的食物（选填）", text: $allergies)
-        } } .navigationTitle("欢迎使用") .toolbar { ToolbarItem(placement: .confirmationAction) { Button("开始") { var p = store.snapshot.profile; p.sleepHours = sleep; p.wakeMinute = Calendar.current.component(.hour, from: wake) * 60 + Calendar.current.component(.minute, from: wake); p.allergies = allergies.split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) }; store.snapshot.profile = p; store.snapshot.onboardingComplete = true; dismiss() } } } }
+        } }.dismissKeyboardOnTap() .navigationTitle("欢迎使用") .toolbar { ToolbarItem(placement: .confirmationAction) { Button("开始") { var p = store.snapshot.profile; p.sleepHours = sleep; p.wakeMinute = Calendar.current.component(.hour, from: wake) * 60 + Calendar.current.component(.minute, from: wake); p.allergies = allergies.split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) }; store.snapshot.profile = p; store.snapshot.onboardingComplete = true; dismiss() } } } }
     }
 }

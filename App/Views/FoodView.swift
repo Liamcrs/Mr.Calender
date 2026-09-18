@@ -77,6 +77,7 @@ struct AddFoodView: View {
                     Task { photoData = try? await item.loadTransferable(type: Data.self) }
                 }
             }
+            .dismissKeyboardOnTap()
             .navigationTitle("添加餐厅和菜品")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("取消") { dismiss() } }

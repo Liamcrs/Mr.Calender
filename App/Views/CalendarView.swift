@@ -31,5 +31,5 @@ struct CalendarView: View {
 struct AddEventView: View {
     @EnvironmentObject private var store: AppStore; @Environment(\.dismiss) private var dismiss
     @State private var title = ""; @State private var date = Date()
-    var body: some View { NavigationStack { Form { TextField("标题", text: $title); DatePicker("时间", selection: $date) }.navigationTitle("添加安排").toolbar { ToolbarItem(placement: .cancellationAction) { Button("取消") { dismiss() } }; ToolbarItem(placement: .confirmationAction) { Button("保存") { guard !title.isEmpty else { return }; store.addEvent(title: title, date: date); dismiss() } } } } }
+    var body: some View { NavigationStack { Form { TextField("标题", text: $title); DatePicker("时间", selection: $date) }.dismissKeyboardOnTap().navigationTitle("添加安排").toolbar { ToolbarItem(placement: .cancellationAction) { Button("取消") { dismiss() } }; ToolbarItem(placement: .confirmationAction) { Button("保存") { guard !title.isEmpty else { return }; store.addEvent(title: title, date: date); dismiss() } } } } }
 }

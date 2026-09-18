@@ -76,6 +76,7 @@ struct HealthView: View {
                         .font(.caption).foregroundStyle(.secondary)
                 }
             }
+            .dismissKeyboardOnTap()
             .navigationTitle("健康")
             .task { await loadManualWorkouts() }
         }
