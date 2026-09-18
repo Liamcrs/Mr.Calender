@@ -25,6 +25,7 @@
 		000000000000000000000415 /* MrCalenderCore/Holidays.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000203 /* MrCalenderCore/Holidays.swift */; };
 		000000000000000000000416 /* MrCalenderCore/ICSParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000204 /* MrCalenderCore/ICSParser.swift */; };
 		000000000000000000000417 /* Services/ReportExtractor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000120 /* Services/ReportExtractor.swift */; };
+		000000000000000000000418 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000303 /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -51,6 +52,7 @@
 		000000000000000000000300 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		000000000000000000000301 /* MrCalender.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MrCalender.entitlements; sourceTree = "<group>"; };
 		000000000000000000000302 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		000000000000000000000303 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -88,6 +90,7 @@
 				000000000000000000000110 /* Services/HealthKitService.swift */,
 				000000000000000000000111 /* Services/AIService.swift */,
 				000000000000000000000120 /* Services/ReportExtractor.swift */,
+				000000000000000000000303 /* Assets.xcassets */,
 			);
 			path = App;
 			sourceTree = "<group>";
@@ -130,6 +133,7 @@
 			buildConfigurationList = 000000000000000000000011 /* Build configuration list for PBXNativeTarget "MrCalender" */;
 			buildPhases = (
 				000000000000000000000500 /* Sources */,
+				000000000000000000000501 /* Resources */,
 			);
 			buildRules = (
 			);
@@ -194,6 +198,17 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXResourcesBuildPhase section */
+		000000000000000000000501 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				000000000000000000000418 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
 /* Begin XCBuildConfiguration section */
 		000000000000000000000012 /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -215,6 +230,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGNING_ALLOWED = YES;
 				CODE_SIGN_ENTITLEMENTS = Config/MrCalender.entitlements;
 				CODE_SIGN_STYLE = Automatic;
@@ -236,6 +252,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGNING_ALLOWED = YES;
 				CODE_SIGN_ENTITLEMENTS = Config/MrCalender.entitlements;
 				CODE_SIGN_STYLE = Automatic;
