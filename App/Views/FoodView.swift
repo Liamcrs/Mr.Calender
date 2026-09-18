@@ -1,4 +1,5 @@
 import SwiftUI
+import PhotosUI
 
 struct FoodView: View {
     @EnvironmentObject private var store: AppStore
@@ -21,7 +22,7 @@ struct FoodView: View {
                         VStack(spacing: 12) {
                             Image(systemName: "die.face.5").font(.system(size: 54))
                             Text("帮我转一个").font(.title2.bold())
-                            Text("会自动避开过敏原、未确认配料和近期重复").font(.caption).foregroundStyle(.secondary)
+                            Text("会自动避开过敏原和近期重复").font(.caption).foregroundStyle(.secondary)
                         }
                         .frame(maxWidth: .infinity).padding(24)
                         .background(AppTheme.mint, in: RoundedRectangle(cornerRadius: 24))
@@ -33,7 +34,9 @@ struct FoodView: View {
                         Section(category) {
                             ForEach(store.snapshot.restaurants.filter { $0.category == category }) { restaurant in
                                 DisclosureGroup(restaurant.name) {
-                                    ForEach(store.snapshot.dishes.filter { $0.restaurantID == restaurant.id }) { dish in Text(dish.name) }
+                                    ForEach(store.snapshot.dishes.filter { $0.restaurantID == restaurant.id }) { dish in
+                                        HStack { if dish.photoPath != nil { Image(systemName: "photo").foregroundStyle(.green) }; Text(dish.name) }
+                                    }
                                 }
                             }
                         }
@@ -58,14 +61,21 @@ struct AddFoodView: View {
     @State private var category = "食堂"
     @State private var restaurant = ""
     @State private var dish = ""
-    @State private var verified = false
+    @State private var photoItem: PhotosPickerItem?
+    @State private var photoData: Data?
     var body: some View {
         NavigationStack {
             Form {
                 TextField("餐厅名称", text: $restaurant)
                 Picker("分类", selection: $category) { ForEach(["食堂", "学校周边", "商场", "其他"], id: \.self) { Text($0) } }
                 TextField("菜品名称", text: $dish)
-                Toggle("已确认配料", isOn: $verified)
+                PhotosPicker(selection: $photoItem, matching: .images) {
+                    Label(photoData == nil ? "添加菜品照片（可选）" : "已选择菜品照片", systemImage: "photo")
+                }
+                .onChange(of: photoItem) { _, item in
+                    guard let item else { return }
+                    Task { photoData = try? await item.loadTransferable(type: Data.self) }
+                }
             }
             .navigationTitle("添加餐厅和菜品")
             .toolbar {
@@ -75,7 +85,8 @@ struct AddFoodView: View {
                         guard !restaurant.isEmpty, !dish.isEmpty else { return }
                         let r = Restaurant(name: restaurant, category: category)
                         store.snapshot.restaurants.append(r)
-                        store.snapshot.dishes.append(.init(restaurantID: r.id, name: dish, ingredientsVerified: verified))
+                        let photoPath = photoData.flatMap { try? store.addDishPhoto(data: $0) }
+                        store.snapshot.dishes.append(.init(restaurantID: r.id, name: dish, photoPath: photoPath))
                         dismiss()
                     }
                 }

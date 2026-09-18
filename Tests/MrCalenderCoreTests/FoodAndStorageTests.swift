@@ -2,20 +2,36 @@ import XCTest
 @testable import MrCalenderCore
 
 final class FoodAndStorageTests: XCTestCase {
-    func testAllergyAndUnverifiedIngredientsAreHardFilters() {
+    func testAllergyIsHardFilterAndIngredientConfirmationIsNotRequired() {
         let r = Restaurant(name: "一食堂")
         let safe = Dish(restaurantID: r.id, name: "蔬菜饭", ingredientsVerified: true)
         let peanut = Dish(restaurantID: r.id, name: "花生鸡丁", allergens: ["花生"], ingredientsVerified: true)
         let unknown = Dish(restaurantID: r.id, name: "砂锅")
         var p = HealthProfile(); p.allergies = [" 花生 "]
         let result = FoodSelector.candidates(dishes: [safe, peanut, unknown], profile: p, meals: [], avoidRecent: false)
-        XCTAssertEqual(result.map(\.id), [safe.id])
+        XCTAssertEqual(Set(result.map(\.id)), Set([safe.id, unknown.id]))
     }
     func testRecentMealsCanBeExcludedWithoutRelaxingRestrictions() {
         let dish = Dish(restaurantID: UUID(), name: "米饭", ingredientsVerified: true)
         let meals = [MealLog(dishID: dish.id, dishName: dish.name)]
         XCTAssertTrue(FoodSelector.candidates(dishes: [dish], profile: HealthProfile(), meals: meals, avoidRecent: true).isEmpty)
         XCTAssertEqual(FoodSelector.candidates(dishes: [dish], profile: HealthProfile(), meals: meals, avoidRecent: false).count, 1)
+    }
+
+    func testDishCanRoundTripOptionalPhotoAndUnknownIngredients() throws {
+        let restaurant = Restaurant(name: "一食堂")
+        let dish = Dish(restaurantID: restaurant.id, name: "新菜", photoPath: nil)
+        var state = AppSnapshot(); state.restaurants = [restaurant]; state.dishes = [dish]
+        let decoded = try SnapshotStore.decode(SnapshotStore.encode(state))
+        XCTAssertEqual(decoded.dishes.first?.photoPath, nil)
+        XCTAssertEqual(FoodSelector.candidates(dishes: [dish], profile: HealthProfile(), meals: [], avoidRecent: false).count, 1)
+    }
+
+    func testSchemaOneSnapshotMigratesToSchemaTwo() throws {
+        var state = AppSnapshot(); state.schemaVersion = 1
+        let decoded = try SnapshotStore.decode(SnapshotStore.encode(state))
+        XCTAssertEqual(decoded.schemaVersion, 2)
+        XCTAssertTrue(decoded.healthChat.isEmpty)
     }
     func testSnapshotRoundTripAndRefusesUnknownSchema() throws {
         var state = AppSnapshot(); state.restaurants = [.init(name: "一楼", category: "食堂")]

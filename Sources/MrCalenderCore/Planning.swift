@@ -28,6 +28,15 @@ public enum SchedulePlanner {
         return SleepPlan(wakeAt: wake, bedAt: bed)
     }
 
+    public static func sleepReminders(forMorning morning: Date, profile: HealthProfile, events: [CalendarEvent], calendar: Calendar) -> [PlannedReminder] {
+        let plan = sleepPlan(forMorning: morning, profile: profile, events: events, calendar: calendar)
+        return [30, 20, 10].map { minutes in
+            let date = plan.bedAt.addingTimeInterval(-Double(minutes * 60))
+            return PlannedReminder(id: "sleep-\(Int(plan.bedAt.timeIntervalSince1970))-\(minutes)", kind: .sleep,
+                                   title: "准备睡觉", detail: "距离建议入睡还有 \(minutes) 分钟 · 目标睡眠 \(String(format: "%.1f", profile.sleepHours)) 小时", date: date)
+        }
+    }
+
     public static func reminders(_ state: AppSnapshot, from start: Date, to end: Date, calendar: Calendar) -> [PlannedReminder] {
         var result: [PlannedReminder] = []
         for event in state.events where event.startsAt >= start && event.startsAt < end {
@@ -48,16 +57,12 @@ public enum SchedulePlanner {
                 date = date.addingTimeInterval(Double(interval * 60))
             }
         }
-        if profile.exerciseEnabled {
-            let day = calendar.startOfDay(for: start)
-            let date = calendar.date(byAdding: .minute, value: profile.exerciseMinute, to: day)!
-            if date >= start && date < end && !isBusy(date, events: state.events) {
-                result.append(.init(id: "exercise-\(Int(date.timeIntervalSince1970))", kind: .exercise, title: profile.exerciseKind.title, detail: "目标 \(profile.exerciseMinutes) 分钟", date: date))
-            }
-        }
         if profile.sleepEnabled {
-            let plan = sleepPlan(forMorning: calendar.date(byAdding: .day, value: 1, to: start)!, profile: profile, events: state.events, calendar: calendar)
-            if plan.bedAt >= start && plan.bedAt < end { result.append(.init(id: "sleep-\(Int(plan.bedAt.timeIntervalSince1970))", kind: .sleep, title: "准备睡觉", detail: "目标睡眠 \(String(format: "%.1f", profile.sleepHours)) 小时", date: plan.bedAt)) }
+            var morning = calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: start))!
+            while morning < end {
+                result.append(contentsOf: sleepReminders(forMorning: morning, profile: profile, events: state.events, calendar: calendar).filter { $0.date >= start && $0.date < end })
+                morning = calendar.date(byAdding: .day, value: 1, to: morning)!
+            }
         }
         let records = Dictionary(uniqueKeysWithValues: state.reminderRecords.map { ($0.id, $0) })
         return result.compactMap { reminder in

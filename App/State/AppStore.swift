@@ -3,19 +3,24 @@ import SwiftUI
 
 @MainActor
 final class AppStore: ObservableObject {
-    @Published var snapshot: AppSnapshot { didSet { save() } }
+    @Published var snapshot: AppSnapshot { didSet { save(); if isReady { refreshReminders() } } }
     @Published var selectedDate = Date()
     @Published var reminders: [PlannedReminder] = []
     @Published var banner: String?
     private let url: URL
+    private let photosDirectory: URL
     private let calendar: Calendar
+    private var isReady = false
 
     init() {
         var c = Calendar(identifier: .gregorian); c.timeZone = .current; calendar = c
         let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
         try? FileManager.default.createDirectory(at: support, withIntermediateDirectories: true)
         url = support.appendingPathComponent("snapshot.json")
+        photosDirectory = support.appendingPathComponent("DishPhotos", isDirectory: true)
+        try? FileManager.default.createDirectory(at: photosDirectory, withIntermediateDirectories: true)
         if let data = try? Data(contentsOf: url), let loaded = try? SnapshotStore.decode(data) { snapshot = loaded } else { snapshot = AppSnapshot() }
+        isReady = true
         refreshReminders()
     }
 
@@ -25,9 +30,11 @@ final class AppStore: ObservableObject {
     }
     func refreshReminders() {
         let from = calendar.startOfDay(for: selectedDate)
-        let to = calendar.date(byAdding: .day, value: 2, to: from)!
+        let to = calendar.date(byAdding: .day, value: 7, to: from)!
         reminders = SchedulePlanner.reminders(snapshot, from: from, to: to, calendar: calendar)
+        if isReady { scheduleNotifications() }
     }
+    func scheduleNotifications() { let queue = reminders; Task { await NotificationService.shared.schedule(queue) } }
     func setReminder(_ reminder: PlannedReminder, status: ReminderStatus, snoozedUntil: Date? = nil) {
         snapshot.reminderRecords.removeAll { $0.id == reminder.id }
         snapshot.reminderRecords.append(.init(id: reminder.id, status: status, snoozedUntil: snoozedUntil))
@@ -36,6 +43,15 @@ final class AppStore: ObservableObject {
     func addEvent(title: String, date: Date, duration: TimeInterval = 3600) {
         snapshot.events.append(.init(title: title, startsAt: date, endsAt: date.addingTimeInterval(duration)))
         refreshReminders()
+    }
+    func addDishPhoto(data: Data) throws -> String {
+        let name = "\(UUID().uuidString).jpg"
+        try data.write(to: photosDirectory.appendingPathComponent(name), options: [.atomic, .completeFileProtection])
+        return name
+    }
+    func photoURL(for path: String?) -> URL? {
+        guard let path, !path.isEmpty else { return nil }
+        return photosDirectory.appendingPathComponent(path)
     }
     func importICS(_ text: String) {
         do {

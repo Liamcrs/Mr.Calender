@@ -6,7 +6,6 @@ public enum FoodSelector {
         let tags = Set(profile.avoidedTags.map { $0.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() })
         let recentIDs: Set<UUID> = Set(meals.filter { calendar.dateComponents([.day], from: $0.date, to: now).day.map { abs($0) <= 2 } ?? false }.compactMap(\.dishID))
         return dishes.filter { dish in
-            guard dish.ingredientsVerified else { return false }
             guard Set(dish.allergens.map { $0.lowercased() }).isDisjoint(with: allergies) else { return false }
             guard Set(dish.tags.map { $0.lowercased() }).isDisjoint(with: tags) else { return false }
             return !avoidRecent || !recentIDs.contains(dish.id)
@@ -18,7 +17,7 @@ public enum SnapshotStore {
     public static func encode(_ snapshot: AppSnapshot) throws -> Data { try JSONEncoder().encode(snapshot) }
     public static func decode(_ data: Data) throws -> AppSnapshot {
         let value = try JSONDecoder().decode(AppSnapshot.self, from: data)
-        guard value.schemaVersion == 1 else { throw NSError(domain: "MrCalender", code: 1, userInfo: [NSLocalizedDescriptionKey: "不支持的数据版本"]) }
+        guard value.schemaVersion == 2 else { throw NSError(domain: "MrCalender", code: 1, userInfo: [NSLocalizedDescriptionKey: "不支持的数据版本"]) }
         return value
     }
 }
