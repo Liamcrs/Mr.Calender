@@ -1,73 +1,280 @@
 // !$*UTF8*$!
 {
 	archiveVersion = 1;
-	classes = {};
+	classes = {
+	};
 	objectVersion = 56;
 	objects = {
-		000000000000000000000001 = {isa = PBXProject; attributes = {LastUpgradeCheck = 2600;}; buildConfigurationList = 000000000000000000000010; compatibilityVersion = "Xcode 14.0"; developmentRegion = zh-Hans; hasScannedForEncodings = 0; knownRegions = (en, "zh-Hans"); mainGroup = 000000000000000000000002; productRefGroup = 000000000000000000000003; projectDirPath = ""; projectRoot = ""; targets = (000000000000000000000020,); };
-		000000000000000000000002 = {isa = PBXGroup; children = (000000000000000000000030, 000000000000000000000031, 000000000000000000000032, 000000000000000000000033); sourceTree = "<group>";};
-		000000000000000000000003 = {isa = PBXGroup; children = (000000000000000000000004,); name = Products; sourceTree = "<group>";};
-		000000000000000000000004 = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MrCalender.app; sourceTree = BUILT_PRODUCTS_DIR;};
-		000000000000000000000030 = {isa = PBXGroup; children = (000000000000000000000100, 000000000000000000000101, 000000000000000000000102, 000000000000000000000103, 000000000000000000000104, 000000000000000000000105, 000000000000000000000106, 000000000000000000000107, 000000000000000000000108, 000000000000000000000109, 000000000000000000000110, 000000000000000000000111, 000000000000000000000120); path = App; sourceTree = "<group>";};
-		000000000000000000000031 = {isa = PBXGroup; children = (000000000000000000000200, 000000000000000000000201, 000000000000000000000202, 000000000000000000000203, 000000000000000000000204, 000000000000000000000205); path = Sources; sourceTree = "<group>";};
-		000000000000000000000032 = {isa = PBXGroup; children = (000000000000000000000300, 000000000000000000000301, 000000000000000000000302); path = Config; sourceTree = "<group>";};
-		000000000000000000000033 = {isa = PBXGroup; children = (); path = docs; sourceTree = "<group>";};
-		000000000000000000000100 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MrCalenderApp.swift; sourceTree = "<group>";};
-		000000000000000000000101 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = State/AppStore.swift; sourceTree = "<group>";};
-		000000000000000000000102 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Design/Theme.swift; sourceTree = "<group>";};
-		000000000000000000000103 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/RootView.swift; sourceTree = "<group>";};
-		000000000000000000000104 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/TodayView.swift; sourceTree = "<group>";};
-		000000000000000000000105 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/CalendarView.swift; sourceTree = "<group>";};
-		000000000000000000000106 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/HealthView.swift; sourceTree = "<group>";};
-		000000000000000000000107 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/FoodView.swift; sourceTree = "<group>";};
-		000000000000000000000108 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/SettingsView.swift; sourceTree = "<group>";};
-		000000000000000000000109 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/NotificationService.swift; sourceTree = "<group>";};
-		000000000000000000000110 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/HealthKitService.swift; sourceTree = "<group>";};
-		000000000000000000000111 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/AIService.swift; sourceTree = "<group>";};
-		000000000000000000000120 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/ReportExtractor.swift; sourceTree = "<group>";};
-		000000000000000000000112 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>";};
-		000000000000000000000113 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Planning.swift; sourceTree = "<group>";};
-		000000000000000000000114 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FoodAndStorage.swift; sourceTree = "<group>";};
-		000000000000000000000115 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Holidays.swift; sourceTree = "<group>";};
-		000000000000000000000116 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ICSParser.swift; sourceTree = "<group>";};
-		000000000000000000000117 = {isa = PBXFileReference; lastKnownFileType = file; path = Info.plist; sourceTree = "<group>";};
-		000000000000000000000118 = {isa = PBXFileReference; lastKnownFileType = file; path = MrCalender.entitlements; sourceTree = "<group>";};
-		000000000000000000000119 = {isa = PBXFileReference; lastKnownFileType = file; path = PrivacyInfo.xcprivacy; sourceTree = "<group>";};
-		000000000000000000000200 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MrCalenderCore/Models.swift; sourceTree = "<group>";};
-		000000000000000000000201 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MrCalenderCore/Planning.swift; sourceTree = "<group>";};
-		000000000000000000000202 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MrCalenderCore/FoodAndStorage.swift; sourceTree = "<group>";};
-		000000000000000000000203 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MrCalenderCore/Holidays.swift; sourceTree = "<group>";};
-		000000000000000000000204 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MrCalenderCore/ICSParser.swift; sourceTree = "<group>";};
-		000000000000000000000205 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Package.swift; sourceTree = "<group>";};
-		000000000000000000000300 = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>";};
-		000000000000000000000301 = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MrCalender.entitlements; sourceTree = "<group>";};
-		000000000000000000000302 = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>";};
-		000000000000000000000400 = {isa = PBXBuildFile; fileRef = 000000000000000000000100;};
-		000000000000000000000401 = {isa = PBXBuildFile; fileRef = 000000000000000000000101;};
-		000000000000000000000402 = {isa = PBXBuildFile; fileRef = 000000000000000000000102;};
-		000000000000000000000403 = {isa = PBXBuildFile; fileRef = 000000000000000000000103;};
-		000000000000000000000404 = {isa = PBXBuildFile; fileRef = 000000000000000000000104;};
-		000000000000000000000405 = {isa = PBXBuildFile; fileRef = 000000000000000000000105;};
-		000000000000000000000406 = {isa = PBXBuildFile; fileRef = 000000000000000000000106;};
-		000000000000000000000407 = {isa = PBXBuildFile; fileRef = 000000000000000000000107;};
-		000000000000000000000408 = {isa = PBXBuildFile; fileRef = 000000000000000000000108;};
-		000000000000000000000409 = {isa = PBXBuildFile; fileRef = 000000000000000000000109;};
-		000000000000000000000410 = {isa = PBXBuildFile; fileRef = 000000000000000000000110;};
-		000000000000000000000411 = {isa = PBXBuildFile; fileRef = 000000000000000000000111;};
-		000000000000000000000412 = {isa = PBXBuildFile; fileRef = 000000000000000000000200;};
-		000000000000000000000413 = {isa = PBXBuildFile; fileRef = 000000000000000000000201;};
-		000000000000000000000414 = {isa = PBXBuildFile; fileRef = 000000000000000000000202;};
-		000000000000000000000415 = {isa = PBXBuildFile; fileRef = 000000000000000000000203;};
-		000000000000000000000416 = {isa = PBXBuildFile; fileRef = 000000000000000000000204;};
-		000000000000000000000417 = {isa = PBXBuildFile; fileRef = 000000000000000000000120;};
-		000000000000000000000500 = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (000000000000000000000400,000000000000000000000401,000000000000000000000402,000000000000000000000403,000000000000000000000404,000000000000000000000405,000000000000000000000406,000000000000000000000407,000000000000000000000408,000000000000000000000409,000000000000000000000410,000000000000000000000411,000000000000000000000412,000000000000000000000413,000000000000000000000414,000000000000000000000415,000000000000000000000416,000000000000000000000417); runOnlyForDeploymentPostprocessing = 0;};
-		000000000000000000000020 = {isa = PBXNativeTarget; buildConfigurationList = 000000000000000000000011; buildPhases = (000000000000000000000500,); buildRules = (); dependencies = (); name = MrCalender; productName = MrCalender; productReference = 000000000000000000000004; productType = "com.apple.product-type.application";};
-		000000000000000000000010 = {isa = XCConfigurationList; buildConfigurations = (000000000000000000000012,000000000000000000000013); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release;};
-		000000000000000000000011 = {isa = XCConfigurationList; buildConfigurations = (000000000000000000000014,000000000000000000000015); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release;};
-		000000000000000000000012 = {isa = XCBuildConfiguration; buildSettings = {ALWAYS_SEARCH_USER_PATHS = NO; PRODUCT_NAME = MrCalender;}; name = Debug;};
-		000000000000000000000013 = {isa = XCBuildConfiguration; buildSettings = {ALWAYS_SEARCH_USER_PATHS = NO; PRODUCT_NAME = MrCalender;}; name = Release;};
-		000000000000000000000014 = {isa = XCBuildConfiguration; buildSettings = {ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor; CODE_SIGN_STYLE = Automatic; CODE_SIGN_ENTITLEMENTS = Config/MrCalender.entitlements; CURRENT_PROJECT_VERSION = 1; INFOPLIST_FILE = Config/Info.plist; IPHONEOS_DEPLOYMENT_TARGET = 17.0; PRODUCT_BUNDLE_IDENTIFIER = com.example.mrcalender; PRODUCT_NAME = MrCalender; SWIFT_VERSION = 5.0; CODE_SIGNING_ALLOWED = NO;}; name = Debug;};
-		000000000000000000000015 = {isa = XCBuildConfiguration; buildSettings = {ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor; CODE_SIGN_STYLE = Automatic; CODE_SIGN_ENTITLEMENTS = Config/MrCalender.entitlements; CURRENT_PROJECT_VERSION = 1; INFOPLIST_FILE = Config/Info.plist; IPHONEOS_DEPLOYMENT_TARGET = 17.0; PRODUCT_BUNDLE_IDENTIFIER = com.example.mrcalender; PRODUCT_NAME = MrCalender; SWIFT_VERSION = 5.0; CODE_SIGNING_ALLOWED = NO;}; name = Release;};
+
+/* Begin PBXBuildFile section */
+		000000000000000000000400 /* MrCalenderApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000100 /* MrCalenderApp.swift */; };
+		000000000000000000000401 /* State/AppStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000101 /* State/AppStore.swift */; };
+		000000000000000000000402 /* Design/Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000102 /* Design/Theme.swift */; };
+		000000000000000000000403 /* Views/RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000103 /* Views/RootView.swift */; };
+		000000000000000000000404 /* Views/TodayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000104 /* Views/TodayView.swift */; };
+		000000000000000000000405 /* Views/CalendarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000105 /* Views/CalendarView.swift */; };
+		000000000000000000000406 /* Views/HealthView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000106 /* Views/HealthView.swift */; };
+		000000000000000000000407 /* Views/FoodView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000107 /* Views/FoodView.swift */; };
+		000000000000000000000408 /* Views/SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000108 /* Views/SettingsView.swift */; };
+		000000000000000000000409 /* Services/NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000109 /* Services/NotificationService.swift */; };
+		000000000000000000000410 /* Services/HealthKitService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000110 /* Services/HealthKitService.swift */; };
+		000000000000000000000411 /* Services/AIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000111 /* Services/AIService.swift */; };
+		000000000000000000000412 /* MrCalenderCore/Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000200 /* MrCalenderCore/Models.swift */; };
+		000000000000000000000413 /* MrCalenderCore/Planning.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000201 /* MrCalenderCore/Planning.swift */; };
+		000000000000000000000414 /* MrCalenderCore/FoodAndStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000202 /* MrCalenderCore/FoodAndStorage.swift */; };
+		000000000000000000000415 /* MrCalenderCore/Holidays.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000203 /* MrCalenderCore/Holidays.swift */; };
+		000000000000000000000416 /* MrCalenderCore/ICSParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000204 /* MrCalenderCore/ICSParser.swift */; };
+		000000000000000000000417 /* Services/ReportExtractor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000120 /* Services/ReportExtractor.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		000000000000000000000004 /* MrCalender.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MrCalender.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		000000000000000000000100 /* MrCalenderApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MrCalenderApp.swift; sourceTree = "<group>"; };
+		000000000000000000000101 /* State/AppStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = State/AppStore.swift; sourceTree = "<group>"; };
+		000000000000000000000102 /* Design/Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Design/Theme.swift; sourceTree = "<group>"; };
+		000000000000000000000103 /* Views/RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/RootView.swift; sourceTree = "<group>"; };
+		000000000000000000000104 /* Views/TodayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/TodayView.swift; sourceTree = "<group>"; };
+		000000000000000000000105 /* Views/CalendarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/CalendarView.swift; sourceTree = "<group>"; };
+		000000000000000000000106 /* Views/HealthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/HealthView.swift; sourceTree = "<group>"; };
+		000000000000000000000107 /* Views/FoodView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/FoodView.swift; sourceTree = "<group>"; };
+		000000000000000000000108 /* Views/SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/SettingsView.swift; sourceTree = "<group>"; };
+		000000000000000000000109 /* Services/NotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/NotificationService.swift; sourceTree = "<group>"; };
+		000000000000000000000110 /* Services/HealthKitService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/HealthKitService.swift; sourceTree = "<group>"; };
+		000000000000000000000111 /* Services/AIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/AIService.swift; sourceTree = "<group>"; };
+		000000000000000000000120 /* Services/ReportExtractor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/ReportExtractor.swift; sourceTree = "<group>"; };
+		000000000000000000000200 /* MrCalenderCore/Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MrCalenderCore/Models.swift; sourceTree = "<group>"; };
+		000000000000000000000201 /* MrCalenderCore/Planning.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MrCalenderCore/Planning.swift; sourceTree = "<group>"; };
+		000000000000000000000202 /* MrCalenderCore/FoodAndStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MrCalenderCore/FoodAndStorage.swift; sourceTree = "<group>"; };
+		000000000000000000000203 /* MrCalenderCore/Holidays.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MrCalenderCore/Holidays.swift; sourceTree = "<group>"; };
+		000000000000000000000204 /* MrCalenderCore/ICSParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MrCalenderCore/ICSParser.swift; sourceTree = "<group>"; };
+		000000000000000000000205 /* Package.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Package.swift; sourceTree = "<group>"; };
+		000000000000000000000300 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		000000000000000000000301 /* MrCalender.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MrCalender.entitlements; sourceTree = "<group>"; };
+		000000000000000000000302 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		000000000000000000000002 = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000000030 /* App */,
+				000000000000000000000031 /* Sources */,
+				000000000000000000000032 /* Config */,
+				000000000000000000000033 /* docs */,
+			);
+			sourceTree = "<group>";
+		};
+		000000000000000000000003 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000000004 /* MrCalender.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		000000000000000000000030 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000000100 /* MrCalenderApp.swift */,
+				000000000000000000000101 /* State/AppStore.swift */,
+				000000000000000000000102 /* Design/Theme.swift */,
+				000000000000000000000103 /* Views/RootView.swift */,
+				000000000000000000000104 /* Views/TodayView.swift */,
+				000000000000000000000105 /* Views/CalendarView.swift */,
+				000000000000000000000106 /* Views/HealthView.swift */,
+				000000000000000000000107 /* Views/FoodView.swift */,
+				000000000000000000000108 /* Views/SettingsView.swift */,
+				000000000000000000000109 /* Services/NotificationService.swift */,
+				000000000000000000000110 /* Services/HealthKitService.swift */,
+				000000000000000000000111 /* Services/AIService.swift */,
+				000000000000000000000120 /* Services/ReportExtractor.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		000000000000000000000031 /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000000200 /* MrCalenderCore/Models.swift */,
+				000000000000000000000201 /* MrCalenderCore/Planning.swift */,
+				000000000000000000000202 /* MrCalenderCore/FoodAndStorage.swift */,
+				000000000000000000000203 /* MrCalenderCore/Holidays.swift */,
+				000000000000000000000204 /* MrCalenderCore/ICSParser.swift */,
+				000000000000000000000205 /* Package.swift */,
+			);
+			path = Sources;
+			sourceTree = "<group>";
+		};
+		000000000000000000000032 /* Config */ = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000000300 /* Info.plist */,
+				000000000000000000000301 /* MrCalender.entitlements */,
+				000000000000000000000302 /* PrivacyInfo.xcprivacy */,
+			);
+			path = Config;
+			sourceTree = "<group>";
+		};
+		000000000000000000000033 /* docs */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = docs;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		000000000000000000000020 /* MrCalender */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 000000000000000000000011 /* Build configuration list for PBXNativeTarget "MrCalender" */;
+			buildPhases = (
+				000000000000000000000500 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = MrCalender;
+			productName = MrCalender;
+			productReference = 000000000000000000000004 /* MrCalender.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		000000000000000000000001 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 2600;
+			};
+			buildConfigurationList = 000000000000000000000010 /* Build configuration list for PBXProject "MrCalender" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = "zh-Hans";
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				"zh-Hans",
+			);
+			mainGroup = 000000000000000000000002;
+			productRefGroup = 000000000000000000000003 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				000000000000000000000020 /* MrCalender */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		000000000000000000000500 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				000000000000000000000400 /* MrCalenderApp.swift in Sources */,
+				000000000000000000000401 /* State/AppStore.swift in Sources */,
+				000000000000000000000402 /* Design/Theme.swift in Sources */,
+				000000000000000000000403 /* Views/RootView.swift in Sources */,
+				000000000000000000000404 /* Views/TodayView.swift in Sources */,
+				000000000000000000000405 /* Views/CalendarView.swift in Sources */,
+				000000000000000000000406 /* Views/HealthView.swift in Sources */,
+				000000000000000000000407 /* Views/FoodView.swift in Sources */,
+				000000000000000000000408 /* Views/SettingsView.swift in Sources */,
+				000000000000000000000409 /* Services/NotificationService.swift in Sources */,
+				000000000000000000000410 /* Services/HealthKitService.swift in Sources */,
+				000000000000000000000411 /* Services/AIService.swift in Sources */,
+				000000000000000000000412 /* MrCalenderCore/Models.swift in Sources */,
+				000000000000000000000413 /* MrCalenderCore/Planning.swift in Sources */,
+				000000000000000000000414 /* MrCalenderCore/FoodAndStorage.swift in Sources */,
+				000000000000000000000415 /* MrCalenderCore/Holidays.swift in Sources */,
+				000000000000000000000416 /* MrCalenderCore/ICSParser.swift in Sources */,
+				000000000000000000000417 /* Services/ReportExtractor.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		000000000000000000000012 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				PRODUCT_NAME = MrCalender;
+			};
+			name = Debug;
+		};
+		000000000000000000000013 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				PRODUCT_NAME = MrCalender;
+			};
+			name = Release;
+		};
+		000000000000000000000014 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGNING_ALLOWED = NO;
+				CODE_SIGN_ENTITLEMENTS = Config/MrCalender.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = F9FN32HA5U;
+				INFOPLIST_FILE = Config/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.mrcalender;
+				PRODUCT_NAME = MrCalender;
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		000000000000000000000015 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGNING_ALLOWED = NO;
+				CODE_SIGN_ENTITLEMENTS = Config/MrCalender.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = F9FN32HA5U;
+				INFOPLIST_FILE = Config/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.mrcalender;
+				PRODUCT_NAME = MrCalender;
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		000000000000000000000010 /* Build configuration list for PBXProject "MrCalender" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				000000000000000000000012 /* Debug */,
+				000000000000000000000013 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		000000000000000000000011 /* Build configuration list for PBXNativeTarget "MrCalender" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				000000000000000000000014 /* Debug */,
+				000000000000000000000015 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
 	};
-	rootObject = 000000000000000000000001;
+	rootObject = 000000000000000000000001 /* Project object */;
 }

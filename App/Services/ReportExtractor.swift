@@ -1,7 +1,7 @@
 import Foundation
 import PDFKit
 import Vision
-import UIKit
+import ImageIO
 
 enum ReportExtractor {
     static func text(from url: URL) async throws -> String {
@@ -13,7 +13,10 @@ enum ReportExtractor {
             guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { throw NSError(domain: "MrCalender", code: 32, userInfo: [NSLocalizedDescriptionKey: "PDF 没有可提取的文字，请复制文字或使用截图 OCR"]) }
             return text
         }
-        guard let image = UIImage(contentsOfFile: url.path)?.cgImage else { throw NSError(domain: "MrCalender", code: 33, userInfo: [NSLocalizedDescriptionKey: "图片无法打开"]) }
+        guard let source = CGImageSourceCreateWithURL(url as CFURL, nil),
+              let image = CGImageSourceCreateImageAtIndex(source, 0, nil) else {
+            throw NSError(domain: "MrCalender", code: 33, userInfo: [NSLocalizedDescriptionKey: "图片无法打开"])
+        }
         return try await withCheckedThrowingContinuation { continuation in
             let request = VNRecognizeTextRequest { request, error in
                 if let error { continuation.resume(throwing: error); return }
