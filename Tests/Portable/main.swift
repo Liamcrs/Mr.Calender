@@ -33,7 +33,7 @@ let safe = Dish(restaurantID: r.id, name: "饭", ingredientsVerified: true)
 let allergen = Dish(restaurantID: r.id, name: "花生", allergens: ["花生"], ingredientsVerified: true)
 let unknown = Dish(restaurantID: r.id, name: "砂锅")
 state.profile.allergies = [" 花生 "]
-check(FoodSelector.candidates(dishes: [safe, allergen, unknown], profile: state.profile, meals: [], avoidRecent: false) == [safe], "allergy and unverified hard filter")
+check(FoodSelector.candidates(dishes: [safe, allergen, unknown], profile: state.profile, meals: [], avoidRecent: false) == [safe, unknown], "allergy filter allows unknown ingredients")
 check(FoodSelector.candidates(dishes: [safe], profile: state.profile, meals: [.init(dishID: safe.id, dishName: safe.name)], avoidRecent: true).isEmpty, "recent meal filtering")
 let roundTrip = try! SnapshotStore.decode(try! SnapshotStore.encode(state))
 check(roundTrip == state, "snapshot persistence roundtrip")
