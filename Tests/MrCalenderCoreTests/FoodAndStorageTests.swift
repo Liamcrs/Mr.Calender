@@ -32,6 +32,8 @@ final class FoodAndStorageTests: XCTestCase {
         let decoded = try SnapshotStore.decode(SnapshotStore.encode(state))
         XCTAssertEqual(decoded.schemaVersion, 2)
         XCTAssertTrue(decoded.healthChat.isEmpty)
+        XCTAssertTrue(decoded.profile.waterEnabled)
+        XCTAssertTrue(decoded.profile.sleepEnabled)
     }
     func testSnapshotRoundTripAndRefusesUnknownSchema() throws {
         var state = AppSnapshot(); state.restaurants = [.init(name: "一楼", category: "食堂")]

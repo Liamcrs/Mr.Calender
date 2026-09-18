@@ -170,6 +170,7 @@ public struct AppSnapshot: Codable, Equatable, Sendable {
         meals = try c.decodeIfPresent([MealLog].self, forKey: .meals) ?? []
         reminderRecords = try c.decodeIfPresent([ReminderRecord].self, forKey: .reminderRecords) ?? []
         profile = try c.decodeIfPresent(HealthProfile.self, forKey: .profile) ?? HealthProfile()
+        if rawSchemaVersion == 1 { profile.waterEnabled = true; profile.sleepEnabled = true }
         healthChat = try c.decodeIfPresent([HealthChatMessage].self, forKey: .healthChat) ?? []
         manualWorkouts = try c.decodeIfPresent([ManualWorkout].self, forKey: .manualWorkouts) ?? []
         acceptedAdvice = try c.decodeIfPresent(String.self, forKey: .acceptedAdvice) ?? ""
