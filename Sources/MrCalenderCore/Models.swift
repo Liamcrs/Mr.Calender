@@ -57,8 +57,9 @@ public struct Restaurant: Identifiable, Codable, Equatable, Sendable {
     public var id: UUID
     public var name: String
     public var note: String
-    public init(id: UUID = UUID(), name: String, note: String = "") {
-        self.id = id; self.name = name; self.note = note
+    public var category: String
+    public init(id: UUID = UUID(), name: String, note: String = "", category: String = "食堂") {
+        self.id = id; self.name = name; self.note = note; self.category = category
     }
 }
 
@@ -123,8 +124,9 @@ public struct AppSnapshot: Codable, Equatable, Sendable {
     public var reminderRecords: [ReminderRecord] = []
     public var profile = HealthProfile()
     public var acceptedAdvice: String = ""
-    public var agentBaseURL = "https://api.openai.com/v1"
-    public var agentModel = "gpt-4.1-mini"
+    public var agentBaseURL = "https://api.deepseek.com"
+    public var agentModel = "deepseek-v4-pro"
     public var avoidRecentMeals = true
+    public var onboardingComplete = false
     public init() {}
 }

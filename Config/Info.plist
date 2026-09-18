@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+<key>CFBundleDisplayName</key><string>Mr. Calender</string>
+<key>CFBundleIdentifier</key><string>com.example.mrcalender</string>
+<key>CFBundleName</key><string>MrCalender</string>
+<key>CFBundlePackageType</key><string>APPL</string>
+<key>CFBundleShortVersionString</key><string>0.1</string>
+<key>CFBundleVersion</key><string>1</string>
+<key>LSRequiresIPhoneOS</key><true/>
+<key>NSHealthShareUsageDescription</key><string>Mr. Calender 读取你授权的运动记录，用于匹配运动提醒并自动记录完成情况。</string>
+<key>NSHealthUpdateUsageDescription</key><string>Mr. Calender 不会写入健康数据；此说明用于支持未来的健康扩展。</string>
+<key>NSUserNotificationsUsageDescription</key><string>Mr. Calender 需要通知权限提醒课程、喝水、运动、饮食和睡眠。</string>
+<key>UIBackgroundModes</key><array><string>processing</string></array>
+<key>UILaunchScreen</key><dict><key>UIColorName</key><string>LaunchBackground</string></dict>
+</dict></plist>

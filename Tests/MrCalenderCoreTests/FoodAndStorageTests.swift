@@ -1,0 +1,36 @@
+import XCTest
+@testable import MrCalenderCore
+
+final class FoodAndStorageTests: XCTestCase {
+    func testAllergyAndUnverifiedIngredientsAreHardFilters() {
+        let r = Restaurant(name: "一食堂")
+        let safe = Dish(restaurantID: r.id, name: "蔬菜饭", ingredientsVerified: true)
+        let peanut = Dish(restaurantID: r.id, name: "花生鸡丁", allergens: ["花生"], ingredientsVerified: true)
+        let unknown = Dish(restaurantID: r.id, name: "砂锅")
+        var p = HealthProfile(); p.allergies = [" 花生 "]
+        let result = FoodSelector.candidates(dishes: [safe, peanut, unknown], profile: p, meals: [], avoidRecent: false)
+        XCTAssertEqual(result.map(\.id), [safe.id])
+    }
+    func testRecentMealsCanBeExcludedWithoutRelaxingRestrictions() {
+        let dish = Dish(restaurantID: UUID(), name: "米饭", ingredientsVerified: true)
+        let meals = [MealLog(dishID: dish.id, dishName: dish.name)]
+        XCTAssertTrue(FoodSelector.candidates(dishes: [dish], profile: HealthProfile(), meals: meals, avoidRecent: true).isEmpty)
+        XCTAssertEqual(FoodSelector.candidates(dishes: [dish], profile: HealthProfile(), meals: meals, avoidRecent: false).count, 1)
+    }
+    func testSnapshotRoundTripAndRefusesUnknownSchema() throws {
+        var state = AppSnapshot(); state.restaurants = [.init(name: "一楼", category: "食堂")]
+        let data = try SnapshotStore.encode(state)
+        XCTAssertEqual(try SnapshotStore.decode(data), state)
+        state.schemaVersion = 999
+        XCTAssertThrowsError(try SnapshotStore.decode(SnapshotStore.encode(state)))
+    }
+    func testChineseAndWesternFestivalsAndWorkday() {
+        let fmt = ISO8601DateFormatter()
+        let midAutumn = fmt.date(from: "2026-09-25T04:00:00Z")!
+        let christmas = fmt.date(from: "2026-12-25T04:00:00Z")!
+        let workday = fmt.date(from: "2026-09-20T04:00:00Z")!
+        XCTAssertTrue(HolidayProvider.labels(on: midAutumn).contains { $0.name.contains("中秋") })
+        XCTAssertTrue(HolidayProvider.labels(on: christmas).contains { $0.name == "圣诞节" })
+        XCTAssertTrue(HolidayProvider.labels(on: workday).contains { $0.kind == .workday })
+    }
+}
