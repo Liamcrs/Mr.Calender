@@ -40,8 +40,8 @@ final class AppStore: ObservableObject {
         snapshot.reminderRecords.append(.init(id: reminder.id, status: status, snoozedUntil: snoozedUntil))
         refreshReminders()
     }
-    func addEvent(title: String, date: Date, duration: TimeInterval = 3600) {
-        snapshot.events.append(.init(title: title, startsAt: date, endsAt: date.addingTimeInterval(duration)))
+    func addEvent(title: String, date: Date, duration: TimeInterval = 3600, notes: String = "") {
+        snapshot.events.append(.init(title: title, startsAt: date, endsAt: date.addingTimeInterval(duration), notes: notes))
         refreshReminders()
     }
     func addDishPhoto(data: Data) throws -> String {

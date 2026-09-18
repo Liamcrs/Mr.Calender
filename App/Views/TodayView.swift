@@ -13,7 +13,8 @@ struct TodayView: View {
                         Text("今天，照顾好自己").font(.largeTitle.bold())
                         Text("未来 7 天的安排都可以提前完成").font(.caption).foregroundStyle(.secondary)
                     }
-                    let days = Dictionary(grouping: store.reminders, by: { calendar.startOfDay(for: $0.date) })
+                    let visibleReminders = store.reminders.filter { $0.kind != .water }
+                    let days = Dictionary(grouping: visibleReminders, by: { calendar.startOfDay(for: $0.date) })
                     if days.isEmpty {
                         SectionCard(title: "计划") { Text("未来 7 天还没有需要提醒的安排").foregroundStyle(.secondary) }
                     } else {
