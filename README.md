@@ -1,37 +1,80 @@
 # Mr. Calender
 
-面向 iPhone 的本地优先日历与生活管理 App。首版入口是今日、日历、健康、吃什么和设置。
+面向 iPhone 的本地优先日历与生活管理 App。它把课程与日程、健康计划、饮食选择和系统通知放在一个简洁的工作流里。
 
-## 已包含
+> 项目名称中的 `Calender` 是产品名称的既有拼写，代码、Bundle 和仓库也保持这一名称。
 
-- 自定义日程、课程 `.ics` 导入、重复课程、例外日期、调课、取消和开课前 15 分钟提醒。
-- 中国大陆 2026 节假日/调休标注，以及元旦、春节、清明、端午、中秋、国庆、情人节、万圣节、感恩节和圣诞节标注。
-- 首次启动填写睡眠、起床和饮食限制；睡眠计划按次日最早定时安排倒推。
-- 喝水、运动、睡眠提醒，完成/稍后 15 分钟/跳过；通知最多排程最近 60 项。
-- 食堂、学校周边、商场等餐厅分类，菜品配料确认、过敏原硬过滤和近两日去重转盘。
-- 体检文字/PDF/图片入口；用户确认文本后可调用 DeepSeek `deepseek-v4-pro` 生成结构化生活建议。API Key 只写入 iOS Keychain，源码不含密钥。
-- HealthKit 只读运动记录，支持 Apple Watch 运动记录后续匹配自动完成。
+## 功能
 
-## 打开和运行
+- **今日**：查看未来 7 天的日程和生活计划；喝水提醒保留为系统通知，不在“今日”列表中堆叠显示。
+- **日历**：创建日程、指定时间、填写多行备注；标注中国传统节日和常见西方节日；支持导入 `.ics` 课表，课程开始前 15 分钟通知。
+- **健康**：通过健康问诊 Agent 对话整理作息、饮食和生活建议；支持手动记录运动，也可以读取 HealthKit/Apple Watch 的运动记录。
+- **喝水与睡眠**：用户设置每日饮水量和提醒间隔；喝水提醒避开睡眠时段与已有日程；根据次日最早安排和睡眠目标生成睡前通知。
+- **吃什么**：按食堂、学校周边、商场等分类维护餐厅和菜品；可选上传菜品照片；大转盘随机选择，并结合过敏原和近期用餐记录过滤。
+- **通知**：课程、喝水、饮食和睡眠提醒使用系统通知；提醒支持完成、稍后 15 分钟和跳过。
+- **封面**：`App/Assets.xcassets/AppIcon.appiconset` 中包含正式 App 图标资源。
 
-1. 安装 Xcode 26.2 或更新版本（当前设备报告 iOS 26.6.2，建议安装支持 iOS 26 的 Xcode）。
-2. 双击 `MrCalender.xcodeproj`，在 Signing & Capabilities 选择自己的 Team，确认 HealthKit capability。
-3. 选择 iPhone 15 Pro 真机或模拟器，运行。首次启动填写作息；设置中请求通知、HealthKit 权限，并输入 DeepSeek API Key。
-4. 真机上验证 Apple Watch 运动记录、通知操作和文件导入。
+## 技术结构
 
-## 核心测试
+```text
+App/
+  MrCalenderApp.swift       SwiftUI 入口
+  Views/                    今日、日历、健康、吃什么、设置
+  State/AppStore.swift      本地状态、迁移和提醒刷新
+  Services/                 通知、HealthKit、DeepSeek、文件解析
+  Assets.xcassets/          AppIcon
+Sources/MrCalenderCore/     可独立测试的模型、规划和 ICS 解析核心
+Tests/                      XCTest 与便携行为检查
+Config/                     Info.plist、Entitlements、隐私配置
+```
 
-没有完整 Xcode 的机器上可以运行：
+## 环境要求
+
+- macOS + Xcode 26 或更新版本
+- iOS 17 或更新版本；HealthKit/Apple Watch 验证需要真实设备
+- Swift 5.9 或更新版本
+- Apple Developer Team（真机签名时在 Xcode 的 Signing & Capabilities 中选择）
+
+## 开始运行
+
+1. 克隆仓库并打开 `MrCalender.xcodeproj`。
+2. 在 target `MrCalender` 的 Signing & Capabilities 中选择自己的 Team，确认 HealthKit capability。
+3. 选择 iPhone 真机或模拟器，运行 App。
+4. 首次启动填写睡眠、起床时间和饮食限制；在设置中按需授予通知、HealthKit 权限。
+5. 在“健康”页面的问诊对话中配置 DeepSeek API Key。Key 只保存到 iOS Keychain，不应写入源码、README 或 Git 历史。
+
+### DeepSeek 配置说明
+
+应用使用 `deepseek-v4-pro` 进行健康问诊建议。请在 App 内输入自己的 Key；不要把 Key 放进 `Info.plist`、环境变量提交文件或公开仓库。健康建议仅供生活管理参考，不替代医生诊断。
+
+## 课表导入
+
+在“日历”页面点击“导入课表”，选择 `.ics` 文件。解析器支持时区、重复规则、例外日期、调课和取消事件，并限制规则展开范围以避免异常文件造成无限计算。
+
+## 测试
+
+便携核心检查：
 
 ```sh
-cd /Users/chaoran/Mr.Calender
 sh scripts/check-core.sh
 ```
 
-它通过 `swiftc` 运行 18 个核心行为检查。完整 Xcode 环境再运行 `swift test --disable-sandbox`，会执行 XCTest 套件。
+完整 Swift Package 测试：
 
-## 隐私与发布准备
+```sh
+swift test --disable-sandbox --filter MrCalenderCoreTests
+```
 
-报告默认保存在本机；发送给 Agent 前需要用户主动点击分析。HealthKit 原始数据不发送。正式发布前需要完善隐私政策、真实 Bundle ID、签名、App Store 元数据、通知和 HealthKit capability 审核，以及把节日数据独立更新为每年版本。
+核心测试覆盖日历节日、饮食过滤、ICS 解析、喝水/睡眠计划、提醒去重和提前完成计划等行为。
 
-项目设计与限制记录在 `docs/superpowers/specs/2026-09-18-mr-calender-design.md`、`docs/DECISIONS.md` 和 `docs/ics-report.md`。
+## 隐私、权限与发布准备
+
+- 日程、餐厅、菜品和计划默认保存在本机。
+- HealthKit 只读取用户授权的运动记录；不会写入健康数据，也不会把原始健康记录发送给 AI。
+- 健康问诊内容只有在用户主动提交后才会发送到 DeepSeek。
+- 通知、HealthKit 和文件导入权限均由系统弹窗控制。
+- 正式发布前仍需替换示例 Bundle ID、配置正式签名、补充隐私政策和 App Store 元数据，并按年度维护节假日数据。
+
+## 许可证
+
+本项目使用 [MIT License](LICENSE.md)。
