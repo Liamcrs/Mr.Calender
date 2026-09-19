@@ -5,5 +5,11 @@ DerivedData/
 xcuserdata/
 .DS_Store
 .env
+*.env
+*.env.*
+!.env.example
+Secrets.xcconfig
+*.secret
+*.key
 *.p12
 *.mobileprovision
