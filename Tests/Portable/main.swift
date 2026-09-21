@@ -34,7 +34,16 @@ let allergen = Dish(restaurantID: r.id, name: "花生", allergens: ["花生"], i
 let unknown = Dish(restaurantID: r.id, name: "砂锅")
 state.profile.allergies = [" 花生 "]
 check(FoodSelector.candidates(dishes: [safe, allergen, unknown], profile: state.profile, meals: [], avoidRecent: false) == [safe, unknown], "allergy filter allows unknown ingredients")
-check(FoodSelector.candidates(dishes: [safe], profile: state.profile, meals: [.init(dishID: safe.id, dishName: safe.name)], avoidRecent: true).isEmpty, "recent meal filtering")
+check(FoodSelector.candidates(dishes: [safe], profile: state.profile,
+                              meals: [.init(dishID: safe.id, dishName: safe.name, date: date("2026-09-18T08:00:00"))],
+                              skips: [], avoidSameDayRepeat: true,
+                              now: date("2026-09-18T12:00:00"), calendar: cal).isEmpty,
+      "same-day meal filtering")
+check(FoodSelector.candidates(dishes: [safe], profile: state.profile, meals: [],
+                              skips: [.init(dishID: safe.id, date: date("2026-09-18T09:00:00"))],
+                              avoidSameDayRepeat: true,
+                              now: date("2026-09-18T12:00:00"), calendar: cal).isEmpty,
+      "same-day reroll filtering")
 let roundTrip = try! SnapshotStore.decode(try! SnapshotStore.encode(state))
 check(roundTrip == state, "snapshot persistence roundtrip")
 state.schemaVersion = 999

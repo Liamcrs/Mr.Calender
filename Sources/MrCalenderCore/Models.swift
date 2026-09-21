@@ -124,6 +124,18 @@ public struct MealLog: Identifiable, Codable, Equatable, Sendable {
     }
 }
 
+public struct DishSkipRecord: Identifiable, Codable, Equatable, Sendable {
+    public var id: UUID
+    public var dishID: UUID
+    public var date: Date
+
+    public init(id: UUID = UUID(), dishID: UUID, date: Date = Date()) {
+        self.id = id
+        self.dishID = dishID
+        self.date = date
+    }
+}
+
 public enum ReminderKind: String, Codable, Sendable { case event, water, exercise, meal, sleep }
 public enum ReminderStatus: String, Codable, Sendable { case done, skipped, snoozed }
 
@@ -154,6 +166,7 @@ public struct AppSnapshot: Codable, Equatable, Sendable {
     public var restaurants: [Restaurant] = []
     public var dishes: [Dish] = []
     public var meals: [MealLog] = []
+    public var dishSkips: [DishSkipRecord] = []
     public var reminderRecords: [ReminderRecord] = []
     public var profile = HealthProfile()
     public var healthChat: [HealthChatMessage] = []
@@ -166,7 +179,7 @@ public struct AppSnapshot: Codable, Equatable, Sendable {
     public init() {}
 
     enum CodingKeys: String, CodingKey {
-        case schemaVersion, events, restaurants, dishes, meals, reminderRecords, profile, healthChat, manualWorkouts,
+        case schemaVersion, events, restaurants, dishes, meals, dishSkips, reminderRecords, profile, healthChat, manualWorkouts,
              acceptedAdvice, agentBaseURL, agentModel, avoidRecentMeals, onboardingComplete
     }
     public init(from decoder: Decoder) throws {
@@ -177,6 +190,7 @@ public struct AppSnapshot: Codable, Equatable, Sendable {
         restaurants = try c.decodeIfPresent([Restaurant].self, forKey: .restaurants) ?? []
         dishes = try c.decodeIfPresent([Dish].self, forKey: .dishes) ?? []
         meals = try c.decodeIfPresent([MealLog].self, forKey: .meals) ?? []
+        dishSkips = try c.decodeIfPresent([DishSkipRecord].self, forKey: .dishSkips) ?? []
         reminderRecords = try c.decodeIfPresent([ReminderRecord].self, forKey: .reminderRecords) ?? []
         profile = try c.decodeIfPresent(HealthProfile.self, forKey: .profile) ?? HealthProfile()
         if rawSchemaVersion == 1 { profile.waterEnabled = true; profile.sleepEnabled = true }

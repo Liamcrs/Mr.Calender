@@ -10,7 +10,18 @@ struct RootView: View {
             FoodView().tabItem { Label("吃什么", systemImage: "fork.knife") }
             SettingsView().tabItem { Label("设置", systemImage: "gearshape") }
         }
-        .safeAreaInset(edge: .top) { if let banner = store.banner { Text(banner).font(.footnote).padding(.horizontal).padding(.vertical, 8).frame(maxWidth: .infinity).background(.green.opacity(0.18)) } }
+        .safeAreaInset(edge: .top) {
+            if let banner = store.banner {
+                Text(banner)
+                    .font(.footnote)
+                    .padding(.horizontal)
+                    .padding(.vertical, 8)
+                    .frame(maxWidth: .infinity)
+                    .background(.green.opacity(0.18))
+                    .transition(.move(edge: .top).combined(with: .opacity))
+            }
+        }
+        .animation(.easeInOut(duration: 0.25), value: store.banner)
         .sheet(isPresented: .constant(!store.snapshot.onboardingComplete)) { OnboardingView() }
     }
 }

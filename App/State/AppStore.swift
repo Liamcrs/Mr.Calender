@@ -6,11 +6,12 @@ final class AppStore: ObservableObject {
     @Published var snapshot: AppSnapshot { didSet { save(); if isReady { refreshReminders() } } }
     @Published var selectedDate = Date()
     @Published var reminders: [PlannedReminder] = []
-    @Published var banner: String?
+    @Published var banner: String? { didSet { restartBannerDismissal() } }
     private let url: URL
     private let photosDirectory: URL
     private let calendar: Calendar
     private var isReady = false
+    private var bannerDismissTask: Task<Void, Never>?
 
     init() {
         var c = Calendar(identifier: .gregorian); c.timeZone = .current; calendar = c
@@ -50,8 +51,16 @@ final class AppStore: ObservableObject {
         return name
     }
     func photoURL(for path: String?) -> URL? {
-        guard let path, !path.isEmpty else { return nil }
+        guard let path, !path.isEmpty, URL(fileURLWithPath: path).lastPathComponent == path else { return nil }
         return photosDirectory.appendingPathComponent(path)
+    }
+    func deleteRestaurant(id: UUID) {
+        let photoPaths = snapshot.removeRestaurant(id: id)
+        for path in photoPaths {
+            guard let url = photoURL(for: path) else { continue }
+            try? FileManager.default.removeItem(at: url)
+        }
+        banner = "已删除饭店及其菜品"
     }
     func importICS(_ text: String) {
         do {
@@ -62,5 +71,17 @@ final class AppStore: ObservableObject {
             banner = "已导入 \(result.events.count) 项课程"
             refreshReminders()
         } catch { banner = "课表导入失败：\(error.localizedDescription)" }
+    }
+
+    private func restartBannerDismissal() {
+        bannerDismissTask?.cancel()
+        bannerDismissTask = nil
+        guard banner != nil else { return }
+        bannerDismissTask = Task { [weak self] in
+            do { try await Task.sleep(for: .seconds(5)) }
+            catch { return }
+            guard !Task.isCancelled else { return }
+            self?.banner = nil
+        }
     }
 }

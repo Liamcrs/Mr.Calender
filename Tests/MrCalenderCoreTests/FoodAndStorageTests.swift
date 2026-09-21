@@ -2,6 +2,16 @@ import XCTest
 @testable import MrCalenderCore
 
 final class FoodAndStorageTests: XCTestCase {
+    private var shanghaiCalendar: Calendar {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "Asia/Shanghai")!
+        return calendar
+    }
+
+    private func date(_ value: String) -> Date {
+        ISO8601DateFormatter().date(from: value + "+08:00")!
+    }
+
     func testFoodEntryDraftRejectsWhitespaceOnlyRequiredNames() {
         let draft = FoodEntryDraft(restaurantName: "  \n ", dishName: "  ", category: "食堂")
 
@@ -25,11 +35,68 @@ final class FoodAndStorageTests: XCTestCase {
         let result = FoodSelector.candidates(dishes: [safe, peanut, unknown], profile: p, meals: [], avoidRecent: false)
         XCTAssertEqual(Set(result.map(\.id)), Set([safe.id, unknown.id]))
     }
-    func testRecentMealsCanBeExcludedWithoutRelaxingRestrictions() {
-        let dish = Dish(restaurantID: UUID(), name: "米饭", ingredientsVerified: true)
+    func testOnlyMealsFromTheSameCalendarDayAreExcluded() {
+        let sameDayDish = Dish(restaurantID: UUID(), name: "米饭")
+        let yesterdayDish = Dish(restaurantID: UUID(), name: "面条")
+        let meals = [
+            MealLog(dishID: sameDayDish.id, dishName: sameDayDish.name, date: date("2026-09-21T08:00:00")),
+            MealLog(dishID: yesterdayDish.id, dishName: yesterdayDish.name, date: date("2026-09-20T20:00:00"))
+        ]
+
+        let result = FoodSelector.candidates(
+            dishes: [sameDayDish, yesterdayDish], profile: HealthProfile(), meals: meals, skips: [],
+            avoidSameDayRepeat: true, now: date("2026-09-21T12:00:00"), calendar: shanghaiCalendar
+        )
+
+        XCTAssertEqual(result.map(\.id), [yesterdayDish.id])
+    }
+
+    func testRerollSkipOnlyExcludesDishOnTheSameCalendarDay() {
+        let sameDayDish = Dish(restaurantID: UUID(), name: "米饭")
+        let yesterdayDish = Dish(restaurantID: UUID(), name: "面条")
+        let skips = [
+            DishSkipRecord(dishID: sameDayDish.id, date: date("2026-09-21T09:00:00")),
+            DishSkipRecord(dishID: yesterdayDish.id, date: date("2026-09-20T23:00:00"))
+        ]
+
+        let result = FoodSelector.candidates(
+            dishes: [sameDayDish, yesterdayDish], profile: HealthProfile(), meals: [], skips: skips,
+            avoidSameDayRepeat: true, now: date("2026-09-21T12:00:00"), calendar: shanghaiCalendar
+        )
+
+        XCTAssertEqual(result.map(\.id), [yesterdayDish.id])
+    }
+
+    func testDisablingSameDayRepeatKeepsMealsAndSkipsEligible() {
+        let dish = Dish(restaurantID: UUID(), name: "米饭")
         let meals = [MealLog(dishID: dish.id, dishName: dish.name)]
-        XCTAssertTrue(FoodSelector.candidates(dishes: [dish], profile: HealthProfile(), meals: meals, avoidRecent: true).isEmpty)
-        XCTAssertEqual(FoodSelector.candidates(dishes: [dish], profile: HealthProfile(), meals: meals, avoidRecent: false).count, 1)
+        let skips = [DishSkipRecord(dishID: dish.id)]
+
+        let result = FoodSelector.candidates(
+            dishes: [dish], profile: HealthProfile(), meals: meals, skips: skips,
+            avoidSameDayRepeat: false
+        )
+
+        XCTAssertEqual(result.map(\.id), [dish.id])
+    }
+
+    func testRemovingRestaurantCascadesDishesAndReturnsPhotosButPreservesMeals() {
+        let removedRestaurant = Restaurant(name: "一食堂")
+        let keptRestaurant = Restaurant(name: "二食堂")
+        let removedDish = Dish(restaurantID: removedRestaurant.id, name: "盖饭", photoPath: "cover.jpg")
+        let keptDish = Dish(restaurantID: keptRestaurant.id, name: "面条", photoPath: "keep.jpg")
+        let meal = MealLog(dishID: removedDish.id, dishName: removedDish.name, restaurantName: removedRestaurant.name)
+        var snapshot = AppSnapshot()
+        snapshot.restaurants = [removedRestaurant, keptRestaurant]
+        snapshot.dishes = [removedDish, keptDish]
+        snapshot.meals = [meal]
+
+        let photoPaths = snapshot.removeRestaurant(id: removedRestaurant.id)
+
+        XCTAssertEqual(photoPaths, ["cover.jpg"])
+        XCTAssertEqual(snapshot.restaurants, [keptRestaurant])
+        XCTAssertEqual(snapshot.dishes, [keptDish])
+        XCTAssertEqual(snapshot.meals, [meal])
     }
 
     func testDishCanRoundTripOptionalPhotoAndUnknownIngredients() throws {
@@ -39,6 +106,18 @@ final class FoodAndStorageTests: XCTestCase {
         let decoded = try SnapshotStore.decode(SnapshotStore.encode(state))
         XCTAssertEqual(decoded.dishes.first?.photoPath, nil)
         XCTAssertEqual(FoodSelector.candidates(dishes: [dish], profile: HealthProfile(), meals: [], avoidRecent: false).count, 1)
+    }
+
+    func testDishSkipsRoundTripAndOldSnapshotsDefaultToEmpty() throws {
+        var state = AppSnapshot()
+        let skip = DishSkipRecord(dishID: UUID(), date: date("2026-09-21T09:00:00"))
+        state.dishSkips = [skip]
+        XCTAssertEqual(try SnapshotStore.decode(SnapshotStore.encode(state)).dishSkips, [skip])
+
+        let oldJSON = """
+        {"schemaVersion":2,"events":[],"restaurants":[],"dishes":[],"meals":[]}
+        """.data(using: .utf8)!
+        XCTAssertTrue(try SnapshotStore.decode(oldJSON).dishSkips.isEmpty)
     }
 
     func testSchemaOneSnapshotMigratesToSchemaTwo() throws {
