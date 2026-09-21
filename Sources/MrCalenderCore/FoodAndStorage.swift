@@ -1,5 +1,19 @@
 import Foundation
 
+public struct FoodEntryDraft: Equatable, Sendable {
+    public let restaurantName: String
+    public let dishName: String
+    public let category: String
+
+    public var isValid: Bool { !restaurantName.isEmpty && !dishName.isEmpty }
+
+    public init(restaurantName: String, dishName: String, category: String) {
+        self.restaurantName = restaurantName.trimmingCharacters(in: .whitespacesAndNewlines)
+        self.dishName = dishName.trimmingCharacters(in: .whitespacesAndNewlines)
+        self.category = category
+    }
+}
+
 public enum FoodSelector {
     public static func candidates(dishes: [Dish], profile: HealthProfile, meals: [MealLog], avoidRecent: Bool, now: Date = Date(), calendar: Calendar = .current) -> [Dish] {
         let allergies = Set(profile.allergies.map { $0.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() })

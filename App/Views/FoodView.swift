@@ -63,18 +63,45 @@ struct AddFoodView: View {
     @State private var dish = ""
     @State private var photoItem: PhotosPickerItem?
     @State private var photoData: Data?
+    @State private var isLoadingPhoto = false
+    @State private var formError: String?
+
+    private var draft: FoodEntryDraft {
+        FoodEntryDraft(restaurantName: restaurant, dishName: dish, category: category)
+    }
+
     var body: some View {
         NavigationStack {
             Form {
-                TextField("餐厅名称", text: $restaurant)
-                Picker("分类", selection: $category) { ForEach(["食堂", "学校周边", "商场", "其他"], id: \.self) { Text($0) } }
-                TextField("菜品名称", text: $dish)
-                PhotosPicker(selection: $photoItem, matching: .images) {
-                    Label(photoData == nil ? "添加菜品照片（可选）" : "已选择菜品照片", systemImage: "photo")
+                Section("餐厅") {
+                    TextField("餐厅名称", text: $restaurant)
+                        .textInputAutocapitalization(.never)
+                    Picker("分类", selection: $category) {
+                        ForEach(["食堂", "学校周边", "商场", "其他"], id: \.self) { Text($0) }
+                    }
                 }
-                .onChange(of: photoItem) { _, item in
-                    guard let item else { return }
-                    Task { photoData = try? await item.loadTransferable(type: Data.self) }
+
+                Section("菜品") {
+                    TextField("菜品名称", text: $dish)
+                    PhotosPicker(selection: $photoItem, matching: .images) {
+                        if isLoadingPhoto {
+                            HStack { ProgressView(); Text("正在读取照片…") }
+                        } else {
+                            Label(photoData == nil ? "添加菜品照片（可选）" : "已选择菜品照片", systemImage: "photo")
+                        }
+                    }
+                    .disabled(isLoadingPhoto)
+                    .onChange(of: photoItem) { _, item in loadPhoto(item) }
+                    if photoData != nil {
+                        Button("移除照片", role: .destructive) {
+                            photoItem = nil
+                            photoData = nil
+                        }
+                    }
+                }
+
+                if let formError {
+                    Section { Text(formError).foregroundStyle(.red) }
                 }
             }
             .dismissKeyboardOnTap()
@@ -82,16 +109,45 @@ struct AddFoodView: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("取消") { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("保存") {
-                        guard !restaurant.isEmpty, !dish.isEmpty else { return }
-                        let r = Restaurant(name: restaurant, category: category)
-                        store.snapshot.restaurants.append(r)
-                        let photoPath = photoData.flatMap { try? store.addDishPhoto(data: $0) }
-                        store.snapshot.dishes.append(.init(restaurantID: r.id, name: dish, photoPath: photoPath))
-                        dismiss()
-                    }
+                    Button("保存") { save() }
+                        .disabled(!draft.isValid || isLoadingPhoto)
                 }
             }
+        }
+    }
+
+    private func loadPhoto(_ item: PhotosPickerItem?) {
+        guard let item else { return }
+        formError = nil
+        isLoadingPhoto = true
+        Task {
+            defer { isLoadingPhoto = false }
+            do {
+                guard let data = try await item.loadTransferable(type: Data.self) else {
+                    formError = "无法读取这张照片，请重新选择。"
+                    return
+                }
+                photoData = data
+            } catch {
+                formError = "照片读取失败：\(error.localizedDescription)"
+            }
+        }
+    }
+
+    private func save() {
+        guard draft.isValid else { return }
+        formError = nil
+        do {
+            let photoPath = try photoData.map { try store.addDishPhoto(data: $0) }
+            let newRestaurant = Restaurant(name: draft.restaurantName, category: draft.category)
+            store.snapshot.restaurants.append(newRestaurant)
+            store.snapshot.dishes.append(
+                .init(restaurantID: newRestaurant.id, name: draft.dishName, photoPath: photoPath)
+            )
+            store.banner = "已添加 \(draft.dishName)"
+            dismiss()
+        } catch {
+            formError = "照片保存失败：\(error.localizedDescription)"
         }
     }
 }

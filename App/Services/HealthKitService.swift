@@ -25,11 +25,13 @@ final class HealthKitService {
             return .unknown
         }
     }
-    func workouts(on date: Date) async throws -> [HKWorkout] {
-        let start = Calendar.current.startOfDay(for: date), end = Calendar.current.date(byAdding: .day, value: 1, to: start)!
+    func workouts(from start: Date, to end: Date) async throws -> [HKWorkout] {
+        guard start < end else { return [] }
         let predicate = HKQuery.predicateForSamples(withStart: start, end: end, options: .strictStartDate)
         return try await withCheckedThrowingContinuation { continuation in
-            let query = HKSampleQuery(sampleType: .workoutType(), predicate: predicate, limit: HKObjectQueryNoLimit, sortDescriptors: nil) { _, samples, error in
+            let sort = NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: false)
+            let query = HKSampleQuery(sampleType: .workoutType(), predicate: predicate,
+                                      limit: HKObjectQueryNoLimit, sortDescriptors: [sort]) { _, samples, error in
                 if let error { continuation.resume(throwing: error); return }
                 continuation.resume(returning: (samples as? [HKWorkout]) ?? [])
             }; store.execute(query)

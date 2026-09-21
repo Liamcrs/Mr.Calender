@@ -1,135 +1,364 @@
 import SwiftUI
 import HealthKit
 
-private struct WorkoutSummary: Identifiable {
-    let id: String
-    let title: String
-    let minutes: Int
-    let distanceKM: Double
-    let source: String
-    let date: Date
-}
-
 struct HealthView: View {
     @EnvironmentObject private var store: AppStore
     @State private var message = ""
     @State private var isSending = false
     @State private var isConnectingHealth = false
     @State private var healthStatus: String?
-    @State private var todayWorkouts: [WorkoutSummary] = []
-    @State private var manualKind: WorkoutKind = .walking
-    @State private var manualMinutes = 30
-    @State private var manualDistance = 0.0
+    @State private var healthRecords: [WorkoutRecord] = []
+    @State private var showingAddWorkout = false
+
+    private static let healthService = HealthKitService()
+
+    private var historyRange: (start: Date, end: Date) {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let start = calendar.date(byAdding: .day, value: -29, to: today)!
+        let end = calendar.date(byAdding: .day, value: 1, to: today)!
+        return (start, end)
+    }
+
+    private var allRecords: [WorkoutRecord] {
+        WorkoutHistory.records(
+            manual: store.snapshot.manualWorkouts,
+            health: healthRecords,
+            from: historyRange.start,
+            to: historyRange.end
+        )
+    }
+
+    private var todayRecords: [WorkoutRecord] {
+        allRecords.filter { Calendar.current.isDateInToday($0.date) }
+    }
 
     var body: some View {
         NavigationStack {
             Form {
-                Section("喝水提醒") {
-                    TextField("提醒间隔（分钟）", value: $store.snapshot.profile.waterIntervalMinutes, format: .number)
-                        .keyboardType(.numberPad)
-                    TextField("每次摄入（毫升）", value: $store.snapshot.profile.waterAmountML, format: .number)
-                        .keyboardType(.numberPad)
-                    Text("默认开启；可按你的实际摄入量和作息调整。")
-                        .font(.caption).foregroundStyle(.secondary)
-                }
-                Section("睡眠提醒") {
-                    TextField("目标睡眠时长（小时）", value: $store.snapshot.profile.sleepHours, format: .number.precision(.fractionLength(1)))
-                    TextField("提前准备时间（分钟）", value: $store.snapshot.profile.preparationMinutes, format: .number)
-                    Text("系统会根据明天最早的课程或自定义安排倒推起床与最晚入睡时间，并在入睡前 30、20、10 分钟提醒。")
-                        .font(.caption).foregroundStyle(.secondary)
-                }
-                Section("今日运动记录") {
-                    Button { Task { await connectHealth() } } label: {
-                        if isConnectingHealth { ProgressView().progressViewStyle(.circular) }
-                        else { Label("读取 Apple 健康", systemImage: "heart.text.square") }
-                    }.disabled(isConnectingHealth)
-                    if let healthStatus { Text(healthStatus).font(.caption).foregroundStyle(.secondary) }
-                    ForEach(todayWorkouts) { workout in
-                        HStack {
-                            Image(systemName: "figure.run").foregroundStyle(.green)
-                            VStack(alignment: .leading) {
-                                Text(workout.title).font(.subheadline.bold())
-                                Text("\(workout.minutes) 分钟 · \(workout.distanceKM, specifier: "%.1f") km · \(workout.source)")
-                                    .font(.caption).foregroundStyle(.secondary)
-                            }
-                            Spacer(); Text(workout.date, format: .dateTime.hour().minute()).font(.caption)
-                        }
-                    }
-                    Button("手动补录运动") { addManualWorkout() }
-                    Picker("类型", selection: $manualKind) { ForEach(WorkoutKind.allCases) { Text($0.title).tag($0) } }
-                    Stepper("时长：\(manualMinutes) 分钟", value: $manualMinutes, in: 1...300, step: 5)
-                    TextField("距离（公里，可选）", value: $manualDistance, format: .number.precision(.fractionLength(1)))
-                }
-                Section("健康问诊 Agent") {
-                    ForEach(store.snapshot.healthChat) { chat in
-                        HStack(alignment: .top) {
-                            Text(chat.role == .user ? "我" : "Agent")
-                                .font(.caption.bold()).foregroundStyle(chat.role == .user ? .blue : .green)
-                            Text(chat.content).frame(maxWidth: .infinity, alignment: .leading)
-                        }
-                    }
-                    TextEditor(text: $message).frame(minHeight: 90)
-                    Button { Task { await sendMessage() } } label: {
-                        if isSending { ProgressView() } else { Label("发送给健康 Agent", systemImage: "paperplane.fill") }
-                    }.disabled(message.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isSending)
-                    Text("仅提供生活方式建议，不替代医生诊断；请勿发送不必要的敏感身份信息。")
-                        .font(.caption).foregroundStyle(.secondary)
-                }
+                waterSection
+                sleepSection
+                workoutSection
+                agentSection
             }
             .dismissKeyboardOnTap()
             .navigationTitle("健康")
-            .task { await loadManualWorkouts() }
+            .task { await refreshHealth(requestAccess: false, announceEmpty: false) }
+            .refreshable { await refreshHealth(requestAccess: false, announceEmpty: true) }
+            .sheet(isPresented: $showingAddWorkout) {
+                AddWorkoutView { workout in
+                    store.snapshot.manualWorkouts.append(workout)
+                    store.banner = "已记录 \(workout.kind.title)"
+                }
+            }
         }
     }
 
-    private func addManualWorkout() {
-        let record = ManualWorkout(kind: manualKind, minutes: manualMinutes, distanceKM: max(0, manualDistance))
-        store.snapshot.manualWorkouts.append(record)
-        todayWorkouts.append(.init(id: record.id.uuidString, title: record.kind.title, minutes: record.minutes, distanceKM: record.distanceKM, source: "手动", date: record.date))
-        store.banner = "已记录今日运动"
+    private var waterSection: some View {
+        Section("喝水提醒") {
+            TextField("提醒间隔（分钟）", value: $store.snapshot.profile.waterIntervalMinutes, format: .number)
+                .keyboardType(.numberPad)
+            TextField("每次摄入（毫升）", value: $store.snapshot.profile.waterAmountML, format: .number)
+                .keyboardType(.numberPad)
+            Text("默认开启；提醒只安排在起床后至建议入睡前。")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
     }
 
-    private func connectHealth() async {
-        isConnectingHealth = true; defer { isConnectingHealth = false }
-        do {
-            let health = HealthKitService()
-            let result = try await health.requestAccess()
-            let workouts = try await health.workouts(on: Date())
-            todayWorkouts = workouts.map { workout in
-                let title: String
-                switch workout.workoutActivityType {
-                case .running: title = "跑步"
-                case .swimming: title = "游泳"
-                case .basketball: title = "篮球"
-                case .walking: title = "步行"
-                default: title = "运动"
+    private var sleepSection: some View {
+        Section("睡眠提醒") {
+            TextField("目标睡眠时长（小时）", value: $store.snapshot.profile.sleepHours,
+                      format: .number.precision(.fractionLength(1)))
+                .keyboardType(.decimalPad)
+            TextField("提前准备时间（分钟）", value: $store.snapshot.profile.preparationMinutes, format: .number)
+                .keyboardType(.numberPad)
+            Text("系统会根据明天最早的课程或自定义安排倒推起床与最晚入睡时间，并在入睡前 30、20、10 分钟提醒。")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    private var workoutSection: some View {
+        Section("今日运动记录") {
+            Button { Task { await refreshHealth(requestAccess: true, announceEmpty: true) } } label: {
+                if isConnectingHealth {
+                    HStack { ProgressView(); Text("正在读取…") }
+                } else {
+                    Label("读取 Apple 健康", systemImage: "heart.text.square")
                 }
-                let distance = workout.totalDistance?.doubleValue(for: .meterUnit(with: .kilo)) ?? 0
-                return WorkoutSummary(id: workout.uuid.uuidString, title: title, minutes: Int(workout.duration / 60), distanceKM: distance, source: "Apple 健康", date: workout.startDate)
             }
-            todayWorkouts.append(contentsOf: store.snapshot.manualWorkouts.filter { Calendar.current.isDateInToday($0.date) }.map { .init(id: $0.id.uuidString, title: $0.kind.title, minutes: $0.minutes, distanceKM: $0.distanceKM, source: "手动", date: $0.date) })
-            switch result {
-            case .authorizationRequested: healthStatus = "授权完成，已读取今日运动记录。"
-            case .alreadyHandled: healthStatus = "已读取今日运动记录。"
-            case .unknown: healthStatus = "已读取今日运动记录，授权状态由系统管理。"
+            .disabled(isConnectingHealth)
+
+            if let healthStatus {
+                Text(healthStatus)
+                    .font(.caption)
+                    .foregroundStyle(healthStatus.hasPrefix("读取失败") ? .red : .secondary)
             }
-            store.banner = "Apple 健康已连接"
-        } catch { healthStatus = "连接失败：\(error.localizedDescription)"; store.banner = healthStatus }
+
+            if todayRecords.isEmpty {
+                Text("今天还没有运动记录。可从 Apple 健康读取，或手动补录。")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            } else {
+                ForEach(todayRecords) { WorkoutRecordRow(record: $0) }
+            }
+
+            Button { showingAddWorkout = true } label: {
+                Label("手动补录运动", systemImage: "plus.circle")
+            }
+
+            NavigationLink {
+                WorkoutHistoryView(
+                    healthRecords: healthRecords,
+                    start: historyRange.start,
+                    end: historyRange.end
+                )
+            } label: {
+                HStack {
+                    Label("全部运动记录", systemImage: "list.bullet.rectangle")
+                    Spacer()
+                    Text("近 30 天 \(allRecords.count) 条")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
     }
 
-    private func loadManualWorkouts() async {
-        todayWorkouts = store.snapshot.manualWorkouts.filter { Calendar.current.isDateInToday($0.date) }.map { .init(id: $0.id.uuidString, title: $0.kind.title, minutes: $0.minutes, distanceKM: $0.distanceKM, source: "手动", date: $0.date) }
+    private var agentSection: some View {
+        Section("健康问诊 Agent") {
+            ForEach(store.snapshot.healthChat) { chat in
+                HStack(alignment: .top) {
+                    Text(chat.role == .user ? "我" : "Agent")
+                        .font(.caption.bold())
+                        .foregroundStyle(chat.role == .user ? .blue : .green)
+                    Text(chat.content).frame(maxWidth: .infinity, alignment: .leading)
+                }
+            }
+            TextEditor(text: $message).frame(minHeight: 90)
+            Button { Task { await sendMessage() } } label: {
+                if isSending { ProgressView() }
+                else { Label("发送给健康 Agent", systemImage: "paperplane.fill") }
+            }
+            .disabled(message.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isSending)
+            Text("仅提供生活方式建议，不替代医生诊断；请勿发送不必要的敏感身份信息。")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    private func refreshHealth(requestAccess: Bool, announceEmpty: Bool) async {
+        isConnectingHealth = true
+        defer { isConnectingHealth = false }
+        do {
+            if requestAccess { _ = try await Self.healthService.requestAccess() }
+            let workouts = try await Self.healthService.workouts(from: historyRange.start, to: historyRange.end)
+            healthRecords = workouts.map(workoutRecord)
+            if healthRecords.isEmpty {
+                healthStatus = announceEmpty
+                    ? "近 30 天未读取到运动。HealthKit 不会透露读取权限是否被拒绝；请确认健康 App 中已允许 Mr. Calender 读取“体能训练”，并等待 Apple Watch 数据同步。"
+                    : nil
+            } else {
+                healthStatus = "已从 Apple 健康读取近 30 天 \(healthRecords.count) 条运动。"
+                if requestAccess { store.banner = "Apple 健康记录已更新" }
+            }
+        } catch {
+            healthStatus = "读取失败：\(error.localizedDescription)"
+            if requestAccess { store.banner = healthStatus }
+        }
+    }
+
+    private func workoutRecord(_ workout: HKWorkout) -> WorkoutRecord {
+        let distance = workout.totalDistance?.doubleValue(for: .meterUnit(with: .kilo)) ?? 0
+        return WorkoutRecord(
+            id: "health-\(workout.uuid.uuidString)",
+            kind: workoutKind(workout.workoutActivityType),
+            minutes: max(1, Int((workout.duration / 60).rounded())),
+            distanceKM: max(0, distance),
+            source: .appleHealth,
+            date: workout.startDate
+        )
+    }
+
+    private func workoutKind(_ activity: HKWorkoutActivityType) -> WorkoutKind {
+        switch activity {
+        case .walking: return .walking
+        case .running: return .running
+        case .cycling: return .cycling
+        case .swimming: return .swimming
+        case .basketball: return .basketball
+        case .badminton: return .badminton
+        case .traditionalStrengthTraining, .functionalStrengthTraining: return .strengthTraining
+        case .hiking: return .hiking
+        default: return .other
+        }
     }
 
     private func sendMessage() async {
         let content = message.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !content.isEmpty else { return }
-        guard let key = KeychainStore.shared.read(account: "deepseek-api-key"), !key.isEmpty else { store.banner = "请先在设置中保存 DeepSeek API Key"; return }
-        message = ""; isSending = true; defer { isSending = false }
+        guard let key = KeychainStore.shared.read(account: "deepseek-api-key"), !key.isEmpty else {
+            store.banner = "请先在设置中保存 DeepSeek API Key"
+            return
+        }
+        message = ""
+        isSending = true
+        defer { isSending = false }
         store.snapshot.healthChat.append(.init(role: .user, content: content))
         do {
-            let reply = try await AIService().chat(messages: store.snapshot.healthChat, baseURL: store.snapshot.agentBaseURL, model: store.snapshot.agentModel, apiKey: key)
+            let reply = try await AIService().chat(
+                messages: store.snapshot.healthChat,
+                baseURL: store.snapshot.agentBaseURL,
+                model: store.snapshot.agentModel,
+                apiKey: key
+            )
             store.snapshot.healthChat.append(.init(role: .assistant, content: reply))
-        } catch { store.banner = "健康 Agent 暂时无法回复：\(error.localizedDescription)" }
+        } catch {
+            store.banner = "健康 Agent 暂时无法回复：\(error.localizedDescription)"
+        }
+    }
+}
+
+private struct WorkoutRecordRow: View {
+    let record: WorkoutRecord
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: record.kind.systemImage)
+                .foregroundStyle(record.source == .appleHealth ? .red : .green)
+                .frame(width: 24)
+            VStack(alignment: .leading, spacing: 4) {
+                HStack {
+                    Text(record.title).font(.subheadline.bold())
+                    Text(record.source.title)
+                        .font(.caption2)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(.secondary.opacity(0.12), in: Capsule())
+                }
+                HStack(spacing: 8) {
+                    Text("\(record.minutes) 分钟")
+                    if record.distanceKM > 0.01 {
+                        Text("\(record.distanceKM, specifier: "%.2f") 公里")
+                    }
+                }
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                Text(record.date, format: .dateTime.month().day().hour().minute())
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+            }
+        }
+        .padding(.vertical, 2)
+    }
+}
+
+private struct WorkoutHistoryView: View {
+    @EnvironmentObject private var store: AppStore
+    let healthRecords: [WorkoutRecord]
+    let start: Date
+    let end: Date
+
+    private var records: [WorkoutRecord] {
+        WorkoutHistory.records(
+            manual: store.snapshot.manualWorkouts,
+            health: healthRecords,
+            from: start,
+            to: end
+        )
+    }
+
+    var body: some View {
+        Group {
+            if records.isEmpty {
+                ContentUnavailableView(
+                    "暂无运动记录",
+                    systemImage: "figure.walk",
+                    description: Text("返回健康页读取 Apple 健康，或手动补录运动。")
+                )
+            } else {
+                List(records) { record in
+                    WorkoutRecordRow(record: record)
+                        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                            if record.source == .manual {
+                                Button("删除", role: .destructive) { deleteManualWorkout(record) }
+                            }
+                        }
+                }
+            }
+        }
+        .navigationTitle("运动记录")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+
+    private func deleteManualWorkout(_ record: WorkoutRecord) {
+        store.snapshot.manualWorkouts.removeAll { "manual-\($0.id.uuidString)" == record.id }
+        store.banner = "已删除手动运动记录"
+    }
+}
+
+private struct AddWorkoutView: View {
+    @Environment(\.dismiss) private var dismiss
+    let onSave: (ManualWorkout) -> Void
+
+    @State private var kind: WorkoutKind = .walking
+    @State private var date = Date()
+    @State private var minutes = 30
+    @State private var distanceKM = 0.0
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("运动信息") {
+                    Picker("类型", selection: $kind) {
+                        ForEach(WorkoutKind.allCases) { Text($0.title).tag($0) }
+                    }
+                    DatePicker("时间", selection: $date, in: ...Date())
+                    Stepper("时长：\(minutes) 分钟", value: $minutes, in: 1...600, step: 5)
+                    TextField("距离（公里，可选）", value: $distanceKM,
+                              format: .number.precision(.fractionLength(0...2)))
+                        .keyboardType(.decimalPad)
+                }
+                Section {
+                    Text("手动记录只保存在本机，不会写入 Apple 健康。")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .dismissKeyboardOnTap()
+            .navigationTitle("补录运动")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button("取消") { dismiss() } }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("保存") {
+                        onSave(ManualWorkout(
+                            kind: kind,
+                            minutes: minutes,
+                            distanceKM: max(0, distanceKM),
+                            date: date
+                        ))
+                        dismiss()
+                    }
+                }
+            }
+        }
+    }
+}
+
+private extension WorkoutKind {
+    var systemImage: String {
+        switch self {
+        case .walking: return "figure.walk"
+        case .running: return "figure.run"
+        case .cycling: return "figure.outdoor.cycle"
+        case .swimming: return "figure.pool.swim"
+        case .basketball: return "figure.basketball"
+        case .badminton: return "figure.badminton"
+        case .strengthTraining: return "dumbbell.fill"
+        case .hiking: return "figure.hiking"
+        case .other: return "figure.mixed.cardio"
+        }
     }
 }

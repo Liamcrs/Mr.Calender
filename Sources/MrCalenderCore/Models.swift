@@ -24,11 +24,20 @@ public struct CalendarEvent: Identifiable, Codable, Equatable, Sendable {
 }
 
 public enum WorkoutKind: String, Codable, CaseIterable, Identifiable, Sendable {
-    case walking, running, swimming, basketball
+    case walking, running, cycling, swimming, basketball, badminton, strengthTraining, hiking, other
     public var id: String { rawValue }
     public var title: String {
-        switch self { case .walking: return "步行"; case .running: return "跑步"
-        case .swimming: return "游泳"; case .basketball: return "篮球" }
+        switch self {
+        case .walking: return "步行"
+        case .running: return "跑步"
+        case .cycling: return "骑行"
+        case .swimming: return "游泳"
+        case .basketball: return "篮球"
+        case .badminton: return "羽毛球"
+        case .strengthTraining: return "力量训练"
+        case .hiking: return "徒步"
+        case .other: return "其他运动"
+        }
     }
 }
 

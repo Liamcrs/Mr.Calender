@@ -2,6 +2,20 @@ import XCTest
 @testable import MrCalenderCore
 
 final class FoodAndStorageTests: XCTestCase {
+    func testFoodEntryDraftRejectsWhitespaceOnlyRequiredNames() {
+        let draft = FoodEntryDraft(restaurantName: "  \n ", dishName: "  ", category: "食堂")
+
+        XCTAssertFalse(draft.isValid)
+    }
+
+    func testFoodEntryDraftTrimsNamesBeforeSaving() {
+        let draft = FoodEntryDraft(restaurantName: "  一食堂 ", dishName: " 牛肉面\n", category: "食堂")
+
+        XCTAssertTrue(draft.isValid)
+        XCTAssertEqual(draft.restaurantName, "一食堂")
+        XCTAssertEqual(draft.dishName, "牛肉面")
+    }
+
     func testAllergyIsHardFilterAndIngredientConfirmationIsNotRequired() {
         let r = Restaurant(name: "一食堂")
         let safe = Dish(restaurantID: r.id, name: "蔬菜饭", ingredientsVerified: true)
