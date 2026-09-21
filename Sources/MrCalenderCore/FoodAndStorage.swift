@@ -64,7 +64,13 @@ public enum SnapshotStore {
     public static func encode(_ snapshot: AppSnapshot) throws -> Data { try JSONEncoder().encode(snapshot) }
     public static func decode(_ data: Data) throws -> AppSnapshot {
         let value = try JSONDecoder().decode(AppSnapshot.self, from: data)
-        guard value.schemaVersion == 2 else { throw NSError(domain: "MrCalender", code: 1, userInfo: [NSLocalizedDescriptionKey: "不支持的数据版本"]) }
+        guard value.schemaVersion == 3 else {
+            throw NSError(
+                domain: "MrCalender",
+                code: 1,
+                userInfo: [NSLocalizedDescriptionKey: "不支持的数据版本"]
+            )
+        }
         return value
     }
 }

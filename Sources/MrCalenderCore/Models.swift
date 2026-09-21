@@ -2,6 +2,20 @@ import Foundation
 
 public enum EventSource: String, Codable, Sendable { case custom, course }
 
+public struct Timetable: Identifiable, Codable, Equatable, Sendable {
+    public var id: UUID
+    public var name: String
+    public var isEnabled: Bool
+    public var importedAt: Date
+
+    public init(id: UUID = UUID(), name: String, isEnabled: Bool = true, importedAt: Date = Date()) {
+        self.id = id
+        self.name = name
+        self.isEnabled = isEnabled
+        self.importedAt = importedAt
+    }
+}
+
 public struct CalendarEvent: Identifiable, Codable, Equatable, Sendable {
     public var id: String
     public var title: String
@@ -13,13 +27,16 @@ public struct CalendarEvent: Identifiable, Codable, Equatable, Sendable {
     public var source: EventSource
     public var importedUID: String?
     public var reminderMinutes: Int?
+    public var timetableID: UUID?
 
     public init(id: String = UUID().uuidString, title: String, startsAt: Date, endsAt: Date,
                 isAllDay: Bool = false, location: String = "", notes: String = "",
-                source: EventSource = .custom, importedUID: String? = nil, reminderMinutes: Int? = 15) {
+                source: EventSource = .custom, importedUID: String? = nil, reminderMinutes: Int? = 15,
+                timetableID: UUID? = nil) {
         self.id = id; self.title = title; self.startsAt = startsAt; self.endsAt = endsAt
         self.isAllDay = isAllDay; self.location = location; self.notes = notes
         self.source = source; self.importedUID = importedUID; self.reminderMinutes = reminderMinutes
+        self.timetableID = timetableID
     }
 }
 
@@ -161,8 +178,11 @@ public struct PlannedReminder: Identifiable, Codable, Equatable, Sendable {
 }
 
 public struct AppSnapshot: Codable, Equatable, Sendable {
-    public var schemaVersion = 2
+    public static let legacyTimetableID = UUID(uuidString: "00000000-0000-0000-0000-000000000001")!
+
+    public var schemaVersion = 3
     public var events: [CalendarEvent] = []
+    public var timetables: [Timetable] = []
     public var restaurants: [Restaurant] = []
     public var dishes: [Dish] = []
     public var meals: [MealLog] = []
@@ -179,14 +199,15 @@ public struct AppSnapshot: Codable, Equatable, Sendable {
     public init() {}
 
     enum CodingKeys: String, CodingKey {
-        case schemaVersion, events, restaurants, dishes, meals, dishSkips, reminderRecords, profile, healthChat, manualWorkouts,
+        case schemaVersion, events, timetables, restaurants, dishes, meals, dishSkips, reminderRecords, profile, healthChat, manualWorkouts,
              acceptedAdvice, agentBaseURL, agentModel, avoidRecentMeals, onboardingComplete
     }
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         let rawSchemaVersion = try c.decodeIfPresent(Int.self, forKey: .schemaVersion) ?? 1
-        schemaVersion = rawSchemaVersion == 1 ? 2 : rawSchemaVersion
+        schemaVersion = rawSchemaVersion <= 2 ? 3 : rawSchemaVersion
         events = try c.decodeIfPresent([CalendarEvent].self, forKey: .events) ?? []
+        timetables = try c.decodeIfPresent([Timetable].self, forKey: .timetables) ?? []
         restaurants = try c.decodeIfPresent([Restaurant].self, forKey: .restaurants) ?? []
         dishes = try c.decodeIfPresent([Dish].self, forKey: .dishes) ?? []
         meals = try c.decodeIfPresent([MealLog].self, forKey: .meals) ?? []
@@ -201,5 +222,21 @@ public struct AppSnapshot: Codable, Equatable, Sendable {
         agentModel = try c.decodeIfPresent(String.self, forKey: .agentModel) ?? "deepseek-v4-pro"
         avoidRecentMeals = try c.decodeIfPresent(Bool.self, forKey: .avoidRecentMeals) ?? true
         onboardingComplete = try c.decodeIfPresent(Bool.self, forKey: .onboardingComplete) ?? false
+
+        if rawSchemaVersion <= 2 {
+            let courseIndexes = events.indices.filter { events[$0].source == .course }
+            if !courseIndexes.isEmpty {
+                let legacy = Timetable(
+                    id: Self.legacyTimetableID,
+                    name: "已导入课表",
+                    isEnabled: true,
+                    importedAt: Date(timeIntervalSince1970: 0)
+                )
+                timetables = [legacy]
+                for index in courseIndexes {
+                    events[index].timetableID = legacy.id
+                }
+            }
+        }
     }
 }
