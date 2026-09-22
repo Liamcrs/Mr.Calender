@@ -205,7 +205,7 @@ public struct AppSnapshot: Codable, Equatable, Sendable {
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         let rawSchemaVersion = try c.decodeIfPresent(Int.self, forKey: .schemaVersion) ?? 1
-        schemaVersion = rawSchemaVersion <= 2 ? 3 : rawSchemaVersion
+        schemaVersion = rawSchemaVersion == 1 || rawSchemaVersion == 2 ? 3 : rawSchemaVersion
         events = try c.decodeIfPresent([CalendarEvent].self, forKey: .events) ?? []
         timetables = try c.decodeIfPresent([Timetable].self, forKey: .timetables) ?? []
         restaurants = try c.decodeIfPresent([Restaurant].self, forKey: .restaurants) ?? []
@@ -223,7 +223,7 @@ public struct AppSnapshot: Codable, Equatable, Sendable {
         avoidRecentMeals = try c.decodeIfPresent(Bool.self, forKey: .avoidRecentMeals) ?? true
         onboardingComplete = try c.decodeIfPresent(Bool.self, forKey: .onboardingComplete) ?? false
 
-        if rawSchemaVersion <= 2 {
+        if rawSchemaVersion == 1 || rawSchemaVersion == 2 {
             let courseIndexes = events.indices.filter { events[$0].source == .course }
             if !courseIndexes.isEmpty {
                 let legacy = Timetable(

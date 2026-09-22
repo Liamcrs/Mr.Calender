@@ -44,6 +44,48 @@ final class TimetableTests: XCTestCase {
         XCTAssertTrue(snapshot.timetables.isEmpty)
     }
 
+    func testSchemaOneCourseMigratesIntoLegacyTimetable() throws {
+        let json = """
+        {
+          "schemaVersion": 1,
+          "events": [{
+            "id": "legacy-course",
+            "title": "高等数学",
+            "startsAt": 1788748800,
+            "endsAt": 1788754200,
+            "isAllDay": false,
+            "location": "A101",
+            "notes": "课程代码 MATH101",
+            "source": "course",
+            "importedUID": "math@example.edu",
+            "reminderMinutes": 15
+          }]
+        }
+        """.data(using: .utf8)!
+
+        let snapshot = try SnapshotStore.decode(json)
+
+        XCTAssertEqual(snapshot.schemaVersion, 3)
+        XCTAssertEqual(snapshot.timetables.map(\.id), [legacyID])
+        XCTAssertEqual(snapshot.events[0].timetableID, legacyID)
+    }
+
+    func testSchemaZeroIsRejected() throws {
+        let json = """
+        {"schemaVersion":0,"events":[],"restaurants":[],"dishes":[],"meals":[]}
+        """.data(using: .utf8)!
+
+        XCTAssertThrowsError(try SnapshotStore.decode(json))
+    }
+
+    func testNegativeSchemaVersionIsRejected() throws {
+        let json = """
+        {"schemaVersion":-1,"events":[],"restaurants":[],"dishes":[],"meals":[]}
+        """.data(using: .utf8)!
+
+        XCTAssertThrowsError(try SnapshotStore.decode(json))
+    }
+
     func testSchemaThreeRoundTripDoesNotDuplicateTimetables() throws {
         var snapshot = AppSnapshot()
         let timetable = Timetable(name: "大二上", importedAt: Date(timeIntervalSince1970: 1_700_000_000))
