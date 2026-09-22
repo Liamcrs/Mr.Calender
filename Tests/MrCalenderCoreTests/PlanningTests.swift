@@ -92,4 +92,38 @@ final class PlanningTests: XCTestCase {
         XCTAssertFalse(WorkoutProgress(kind: .running, minutes: 35, distanceKM: 2).meets(profile))
         XCTAssertTrue(WorkoutProgress(kind: .running, minutes: 35, distanceKM: 4).meets(profile))
     }
+
+    func testDisabledTimetableDoesNotCreateRemindersOrConstrainWater() throws {
+        var state = AppSnapshot()
+        state.profile.sleepEnabled = false
+        state.profile.waterEnabled = true
+        state.profile.waterIntervalMinutes = 60
+        let timetable = Timetable(name: "隐藏课表", isEnabled: false)
+        state.timetables = [timetable]
+        state.events = [CalendarEvent(
+            title: "隐藏课程",
+            startsAt: date("2026-09-18T08:00:00"),
+            endsAt: date("2026-09-18T10:00:00"),
+            source: .course,
+            timetableID: timetable.id
+        )]
+
+        let result = SchedulePlanner.reminders(
+            state,
+            from: date("2026-09-18T00:00:00"),
+            to: date("2026-09-19T00:00:00"),
+            calendar: cal
+        )
+
+        XCTAssertFalse(result.contains { $0.kind == .event })
+        XCTAssertTrue(result.contains { $0.kind == .water && $0.date == date("2026-09-18T08:30:00") })
+    }
+
+    func testPlanningWindowAlwaysUsesSuppliedNow() {
+        let now = date("2026-09-18T16:30:00")
+        let window = SchedulePlanner.planningWindow(startingAt: now, calendar: cal)
+
+        XCTAssertEqual(window.start, date("2026-09-18T00:00:00"))
+        XCTAssertEqual(window.end, date("2026-09-25T00:00:00"))
+    }
 }

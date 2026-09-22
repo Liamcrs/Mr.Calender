@@ -105,4 +105,90 @@ final class TimetableTests: XCTestCase {
         XCTAssertEqual(once, twice)
         XCTAssertEqual(twice.timetables, [timetable])
     }
+
+    func testSameUIDCanExistInTwoTimetablesWithoutIDCollision() throws {
+        let start = Date(timeIntervalSince1970: 1_800_000_000)
+        let parsed = CalendarEvent(
+            id: "ics-shared",
+            title: "大学英语",
+            startsAt: start,
+            endsAt: start.addingTimeInterval(3_600),
+            source: .course,
+            importedUID: "shared@example.edu"
+        )
+        var snapshot = AppSnapshot()
+
+        let first = try snapshot.addTimetable(name: "主修", events: [parsed])
+        let second = try snapshot.addTimetable(name: "辅修", events: [parsed])
+
+        XCTAssertEqual(snapshot.timetables.map(\.id), [first.id, second.id])
+        XCTAssertEqual(Set(snapshot.events.map(\.id)).count, 2)
+        XCTAssertEqual(Set(snapshot.events.compactMap(\.timetableID)), [first.id, second.id])
+    }
+
+    func testReplacingTimetableIsScopedAndKeepsStableNamespacedIDs() throws {
+        let start = Date(timeIntervalSince1970: 1_800_000_000)
+        let parsed = CalendarEvent(
+            id: "ics-shared",
+            title: "原课程",
+            startsAt: start,
+            endsAt: start.addingTimeInterval(3_600),
+            source: .course,
+            importedUID: "shared@example.edu"
+        )
+        var snapshot = AppSnapshot()
+        let first = try snapshot.addTimetable(name: "主修", events: [parsed])
+        let second = try snapshot.addTimetable(name: "辅修", events: [parsed])
+        let firstID = snapshot.events.first { $0.timetableID == first.id }!.id
+        var changed = parsed
+        changed.title = "更新课程"
+
+        try snapshot.replaceTimetable(id: first.id, events: [changed])
+
+        XCTAssertEqual(snapshot.events.first { $0.timetableID == first.id }?.id, firstID)
+        XCTAssertEqual(snapshot.events.first { $0.timetableID == first.id }?.title, "更新课程")
+        XCTAssertEqual(snapshot.events.first { $0.timetableID == second.id }?.title, "原课程")
+    }
+
+    func testDisabledAndDeletedTimetablesAreIsolated() throws {
+        let start = Date(timeIntervalSince1970: 1_800_000_000)
+        var snapshot = AppSnapshot()
+        let custom = CalendarEvent(title: "自定义安排", startsAt: start, endsAt: start.addingTimeInterval(1_800))
+        snapshot.events = [custom]
+        let first = try snapshot.addTimetable(name: "主修", events: [
+            CalendarEvent(id: "first", title: "高数", startsAt: start, endsAt: start.addingTimeInterval(3_600), source: .course)
+        ])
+        let second = try snapshot.addTimetable(name: "辅修", events: [
+            CalendarEvent(id: "second", title: "英语", startsAt: start, endsAt: start.addingTimeInterval(3_600), source: .course)
+        ])
+
+        snapshot.setTimetableEnabled(id: first.id, isEnabled: false)
+        XCTAssertEqual(Set(snapshot.activeEvents.map(\.title)), ["自定义安排", "英语"])
+
+        snapshot.removeTimetable(id: second.id)
+        XCTAssertEqual(snapshot.events.map(\.title), ["自定义安排", "高数"])
+        XCTAssertTrue(snapshot.timetables.contains { $0.id == first.id })
+        XCTAssertFalse(snapshot.timetables.contains { $0.id == second.id })
+    }
+
+    func testRemovingEventUsesStableIDInsteadOfFilteredOffset() {
+        let early = CalendarEvent(id: "early", title: "早", startsAt: Date(timeIntervalSince1970: 100), endsAt: Date(timeIntervalSince1970: 200))
+        let unrelated = CalendarEvent(id: "unrelated", title: "其他日期", startsAt: Date(timeIntervalSince1970: 500), endsAt: Date(timeIntervalSince1970: 600))
+        let late = CalendarEvent(id: "late", title: "晚", startsAt: Date(timeIntervalSince1970: 300), endsAt: Date(timeIntervalSince1970: 400))
+        var snapshot = AppSnapshot()
+        snapshot.events = [unrelated, late, early]
+
+        snapshot.removeEvent(id: late.id)
+
+        XCTAssertEqual(Set(snapshot.events.map(\.id)), ["unrelated", "early"])
+    }
+
+    func testImportedDescriptionsAreNotPresentationNotes() {
+        let start = Date(timeIntervalSince1970: 1_800_000_000)
+        let course = CalendarEvent(title: "课程", startsAt: start, endsAt: start.addingTimeInterval(3_600), notes: "代码 CS101 · 第 1-16 周", source: .course)
+        let custom = CalendarEvent(title: "安排", startsAt: start, endsAt: start.addingTimeInterval(3_600), notes: "带电脑")
+
+        XCTAssertEqual(course.presentationNotes, "")
+        XCTAssertEqual(custom.presentationNotes, "带电脑")
+    }
 }
