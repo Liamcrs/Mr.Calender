@@ -183,6 +183,19 @@ final class TimetableTests: XCTestCase {
         XCTAssertEqual(Set(snapshot.events.map(\.id)), ["unrelated", "early"])
     }
 
+    func testFailedReplacementLeavesSnapshotUnchanged() throws {
+        let start = Date(timeIntervalSince1970: 1_800_000_000)
+        var snapshot = AppSnapshot()
+        let timetable = try snapshot.addTimetable(name: "主修", events: [
+            CalendarEvent(id: "course", title: "课程", startsAt: start, endsAt: start.addingTimeInterval(3_600), source: .course)
+        ])
+        let before = snapshot
+
+        XCTAssertThrowsError(try snapshot.replaceTimetable(id: UUID(), events: []))
+        XCTAssertEqual(snapshot, before)
+        XCTAssertEqual(snapshot.events(for: timetable.id).count, 1)
+    }
+
     func testImportedDescriptionsAreNotPresentationNotes() {
         let start = Date(timeIntervalSince1970: 1_800_000_000)
         let course = CalendarEvent(title: "课程", startsAt: start, endsAt: start.addingTimeInterval(3_600), notes: "代码 CS101 · 第 1-16 周", source: .course)
