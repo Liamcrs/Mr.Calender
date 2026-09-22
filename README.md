@@ -1,5 +1,7 @@
 # Mr. Calender
 
+[![CI](https://github.com/Liamcrs/Mr.Calender/actions/workflows/ci.yml/badge.svg)](https://github.com/Liamcrs/Mr.Calender/actions/workflows/ci.yml)
+
 面向 iPhone 的本地优先日历与生活管理 App。它把课程与日程、健康计划、饮食选择和系统通知放在一个简洁的工作流里。
 
 > 项目名称中的 `Calender` 是产品名称的既有拼写，代码、Bundle 和仓库也保持这一名称。
@@ -7,7 +9,7 @@
 ## 功能
 
 - **今日**：查看未来 7 天的日程和生活计划；喝水提醒保留为系统通知，不在“今日”列表中堆叠显示。
-- **日历**：创建日程、指定时间、填写多行备注；标注中国传统节日和常见西方节日；支持导入 `.ics` 课表，课程开始前 15 分钟通知。
+- **日历**：创建日程、指定时间、填写多行备注；标注中国传统节日和常见西方节日；支持导入多个命名 `.ics` 课表，并可分别启用、隐藏、重新导入和删除；课程开始前 15 分钟通知。
 - **健康**：通过健康问诊 Agent 对话整理作息、饮食和生活建议；支持手动记录运动，也可以读取 HealthKit/Apple Watch 的运动记录。
 - **喝水与睡眠**：用户设置每日饮水量和提醒间隔；喝水提醒避开睡眠时段与已有日程；根据次日最早安排和睡眠目标生成睡前通知。
 - **吃什么**：按食堂、学校周边、商场等分类维护餐厅和菜品；可选上传菜品照片；大转盘随机选择，并结合过敏原和近期用餐记录过滤。
@@ -24,6 +26,7 @@ App/
   Services/                 通知、HealthKit、DeepSeek、文件解析
   Assets.xcassets/          AppIcon
 Sources/MrCalenderCore/     可独立测试的模型、规划和 ICS 解析核心
+  Timetables.swift          命名课表的启用、替换和删除逻辑
 Tests/                      XCTest 与便携行为检查
 Config/                     Info.plist、Entitlements、隐私配置
 ```
@@ -49,7 +52,7 @@ Config/                     Info.plist、Entitlements、隐私配置
 
 ## 课表导入
 
-在“日历”页面点击“导入课表”，选择 `.ics` 文件。解析器支持时区、重复规则、例外日期、调课和取消事件，并限制规则展开范围以避免异常文件造成无限计算。
+在“日历”页面点击“导入课表”，选择 `.ics` 文件并为课表命名。已导入的课表可独立启用、隐藏、重新导入和删除。解析器目前实现的 RFC 5545 子集包括 `DAILY`、`WEEKLY`、`INTERVAL`、`COUNT`、`UNTIL`、未编号的每周 `BYDAY`、`EXDATE`、`RDATE`、`RECURRENCE-ID` 以及 Foundation 时区；规则展开范围受限，以避免异常文件造成无限计算。
 
 ## 测试
 
@@ -62,7 +65,13 @@ sh scripts/check-core.sh
 完整 Swift Package 测试：
 
 ```sh
-swift test --disable-sandbox --filter MrCalenderCoreTests
+swift test --disable-sandbox
+```
+
+不签名构建 iOS App：
+
+```sh
+xcodebuild -project MrCalender.xcodeproj -scheme MrCalender -configuration Debug -destination 'generic/platform=iOS' -derivedDataPath /private/tmp/MrCalenderDerivedData CODE_SIGNING_ALLOWED=NO build
 ```
 
 核心测试覆盖日历节日、饮食过滤、ICS 解析、喝水/睡眠计划、提醒去重和提前完成计划等行为。
