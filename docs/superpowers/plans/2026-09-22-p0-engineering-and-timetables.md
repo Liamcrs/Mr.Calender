@@ -15,6 +15,9 @@
 - Never store an API key in source, configuration committed to Git, tests, or documentation.
 - Multiple timetables may be enabled simultaneously.
 - A timetable can be enabled, hidden, reimported, or deleted independently.
+- User decision (2026-09-23): reimport replaces the entire destination timetable's courses, deleting old courses missing from the new file. Preserve ID, name and enabled/hidden state; cancellation-only imports may leave zero courses. This supersedes the former matching-UID-only design wording.
+- Import and timetable deletion must atomically persist before publication or success feedback, with no duplicate automatic save. A failed write leaves the published snapshot unchanged.
+- Notification replacements run through one serialized worker that coalesces to the latest pending queue, including empty queues; no two async apply calls may overlap.
 - Hidden timetable courses must not affect calendar presentation, Today, sleep/water constraints, reminders, or system notifications.
 - Course rows show title, time, and classroom; they do not show course code, week, source, or raw ICS description.
 - Do not add a third-party ICS library.
@@ -31,6 +34,8 @@
 - `.github/workflows/ci.yml` — package tests and unsigned generic iOS build.
 - `Sources/MrCalenderCore/Timetables.swift` — timetable collection operations, active-event projection, event presentation policy, and stable timetable namespacing.
 - `Tests/MrCalenderCoreTests/TimetableTests.swift` — migration and timetable behavior tests.
+- `Sources/MrCalenderCore/LatestNotificationScheduler.swift` — serialized latest-state notification replacement worker.
+- `Tests/MrCalenderCoreTests/CommitAndNotificationTests.swift` — suspended-apply concurrency and injected disk-write failure regressions.
 
 ### Modify
 
@@ -630,7 +635,7 @@ func importICS(_ text: String, timetableName: String? = nil, replacing timetable
             try updated.addTimetable(name: timetableName, events: result.events, importedAt: now)
         }
 
-        snapshot = updated
+        try commit(updated)
         banner = "已导入 \(result.events.count) 项课程"
     } catch {
         banner = "课表导入失败：\(error.localizedDescription)"
@@ -638,7 +643,7 @@ func importICS(_ text: String, timetableName: String? = nil, replacing timetable
 }
 ```
 
-The parse and catalog work happen on a local snapshot copy; assign to the published snapshot exactly once after success.
+The parse and catalog work happen on a local snapshot copy. The scoped `commit` helper calls `SnapshotStore.commit` with an atomic file writer, then publishes exactly once with automatic saving temporarily suppressed. It still refreshes reminders. Encoding or writing must throw before publication; only a successful commit reaches the success banner. Verify failing import and delete writers, and successful write-before-publish ordering.
 
 - [ ] **Step 4: Add explicit timetable and event mutations**
 
@@ -650,8 +655,12 @@ func setTimetableEnabled(id: UUID, isEnabled: Bool) {
 }
 
 func deleteTimetable(id: UUID) {
-    snapshot.removeTimetable(id: id)
-    banner = "已删除课表及其课程"
+    var updated = snapshot
+    updated.removeTimetable(id: id)
+    do {
+        try commit(updated)
+        banner = "已删除课表及其课程"
+    } catch { banner = "课表删除失败：\(error.localizedDescription)" }
 }
 
 func deleteEvent(id: String) {
@@ -660,6 +669,8 @@ func deleteEvent(id: String) {
 ```
 
 Remove explicit `refreshReminders()` calls immediately following mutations of `snapshot`, because the published property observer already performs the refresh.
+
+`scheduleNotifications()` submits to the single `LatestNotificationScheduler` owned by `AppStore`. Keep the worker running across every awaited apply; while it is suspended, overwrite the pending reminder set with the latest submission. Test with the first apply suspended, followed by an intermediate set and an empty set: only the first and empty sets apply, with maximum concurrent applies equal to one.
 
 - [ ] **Step 5: Anchor reminder refresh to now**
 
@@ -811,10 +822,13 @@ ForEach(store.snapshot.timetables) { timetable in
         Text("\(store.snapshot.events(for: timetable.id).count) 节课程 · 导入于 \(timetable.importedAt.formatted(date: .abbreviated, time: .shortened))")
             .font(.caption)
             .foregroundStyle(.secondary)
-        Button("重新导入") {
+        Button("重新导入并替换") {
             reimportingTimetableID = timetable.id
             showingImporter = true
         }
+        Text("新文件将替换此课表的全部课程，未包含的旧课程会被删除。")
+            .font(.caption)
+            .foregroundStyle(.secondary)
     }
     .swipeActions {
         Button("删除", role: .destructive) {

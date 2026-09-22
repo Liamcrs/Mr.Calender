@@ -80,17 +80,31 @@ The parser remains independent of timetable storage. `ICSParser` continues to
 produce course events and imported UIDs; the import coordination layer assigns the
 new timetable ID to every parsed event.
 
-Course replacement is scoped to a timetable. Reimporting into an existing
-timetable replaces only matching imported UIDs owned by that timetable. Importing
-a new timetable never deletes events from another timetable, even when both files
-contain the same UID.
+Course replacement is scoped to a timetable. Per the user's 2026-09-23 decision,
+reimporting replaces the entire timetable's courses: old courses absent from the
+new file are deleted, and a cancellation-only file may leave zero courses. The
+timetable ID, display name, and enabled/hidden state are preserved. This supersedes
+the earlier matching-imported-UID-only wording. Importing a new timetable never
+deletes events from another timetable, even when both files contain the same UID.
+The reimport UI explicitly states that the new file replaces all courses and
+deletes old courses missing from the file.
 
 The P0 UI creates a new timetable for each import. Reimport support is exposed from
 the timetable management screen so the destination timetable is explicit instead
 of inferred from its display name.
 
-An import is committed only after the complete ICS text parses successfully. A
-failed import leaves the snapshot unchanged and presents a five-second banner.
+An import is committed only after the complete ICS text parses and the candidate
+snapshot is atomically saved. Timetable deletion also persists before publication.
+A failed parse or disk write leaves the published snapshot unchanged and presents
+a five-second failure banner; success feedback is only shown after persistence.
+Publishing an already saved candidate skips the normal automatic save to avoid a
+redundant write, while still refreshing reminders.
+
+Notification replacement uses one serialized latest-state worker. A replacement
+already in progress completes before the newest pending reminder set is applied;
+intermediate pending sets are coalesced, including an empty set for removal. The
+worker remains active across suspension points to prevent reentrant overlap. P0
+keeps the full replacement strategy; differential scheduling remains out of scope.
 
 ## Visibility and Deletion
 
@@ -181,6 +195,9 @@ Core tests are written before implementation and cover:
 - Schema 3 round-trip stability
 - Two timetables containing the same ICS UID
 - Replacement scoped to one timetable
+- Whole replacement removes B when reimporting A into A+B, preserves timetable identity/name/hidden state, and permits a cancellation-only file to leave zero courses
+- Injected failed import/deletion writers never publish; successful commits write once before publishing once
+- Suspended notification apply followed by intermediate and empty sets ends with the empty set, without overlapping apply calls
 - Disabled timetable exclusion from active events and reminders
 - Timetable deletion isolation
 - Custom event preservation

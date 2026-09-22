@@ -171,6 +171,57 @@ final class TimetableTests: XCTestCase {
         XCTAssertFalse(snapshot.timetables.contains { $0.id == second.id })
     }
 
+    func testReimportReplacesWholeTimetableAndPreservesIdentityNameAndHiddenState() throws {
+        let start = Date(timeIntervalSince1970: 1_800_000_000)
+        let courseA = CalendarEvent(id: "a", title: "A", startsAt: start, endsAt: start.addingTimeInterval(3_600), source: .course, importedUID: "a")
+        let courseB = CalendarEvent(id: "b", title: "B", startsAt: start, endsAt: start.addingTimeInterval(3_600), source: .course, importedUID: "b")
+        var snapshot = AppSnapshot()
+        let timetable = try snapshot.addTimetable(name: "主修", events: [courseA, courseB])
+        snapshot.setTimetableEnabled(id: timetable.id, isEnabled: false)
+        let importedAt = start.addingTimeInterval(100)
+        let parsed = try ICSParser.parse("""
+        BEGIN:VCALENDAR
+        VERSION:2.0
+        BEGIN:VEVENT
+        UID:a
+        SUMMARY:A
+        DTSTART:20270115T080000Z
+        DTEND:20270115T090000Z
+        END:VEVENT
+        END:VCALENDAR
+        """, from: start.addingTimeInterval(-86_400), to: start.addingTimeInterval(86_400), timeZone: TimeZone(secondsFromGMT: 0)!)
+
+        try snapshot.replaceTimetable(id: timetable.id, events: parsed.events, importedAt: importedAt)
+
+        XCTAssertEqual(snapshot.events(for: timetable.id).map(\.importedUID), ["a"])
+        XCTAssertEqual(snapshot.timetables.map(\.id), [timetable.id])
+        XCTAssertEqual(snapshot.timetables[0].name, "主修")
+        XCTAssertFalse(snapshot.timetables[0].isEnabled)
+        XCTAssertEqual(snapshot.timetables[0].importedAt, importedAt)
+    }
+
+    func testCancellationOnlyReimportCanEmptyTimetable() throws {
+        let start = Date(timeIntervalSince1970: 1_800_000_000)
+        var snapshot = AppSnapshot()
+        let timetable = try snapshot.addTimetable(name: "主修", events: [
+            CalendarEvent(id: "a", title: "A", startsAt: start, endsAt: start.addingTimeInterval(3_600), source: .course, importedUID: "a")
+        ])
+        let parsed = try ICSParser.parse("""
+        BEGIN:VCALENDAR
+        VERSION:2.0
+        BEGIN:VEVENT
+        UID:a
+        STATUS:CANCELLED
+        END:VEVENT
+        END:VCALENDAR
+        """, from: start, to: start.addingTimeInterval(86_400), timeZone: TimeZone(secondsFromGMT: 0)!)
+
+        try snapshot.replaceTimetable(id: timetable.id, events: parsed.events)
+
+        XCTAssertTrue(snapshot.events(for: timetable.id).isEmpty)
+        XCTAssertEqual(snapshot.timetables.map(\.id), [timetable.id])
+    }
+
     func testRemovingEventUsesStableIDInsteadOfFilteredOffset() {
         let early = CalendarEvent(id: "early", title: "早", startsAt: Date(timeIntervalSince1970: 100), endsAt: Date(timeIntervalSince1970: 200))
         let unrelated = CalendarEvent(id: "unrelated", title: "其他日期", startsAt: Date(timeIntervalSince1970: 500), endsAt: Date(timeIntervalSince1970: 600))

@@ -61,6 +61,14 @@ public extension AppSnapshot {
 }
 
 public enum SnapshotStore {
+    /// The writer must atomically replace persistent data or throw without changing it.
+    /// Publish is called exactly once, and only after encoding and writing succeed.
+    public static func commit(_ snapshot: AppSnapshot, write: (Data) throws -> Void,
+                              publish: (AppSnapshot) -> Void) throws {
+        try write(encode(snapshot))
+        publish(snapshot)
+    }
+
     public static func encode(_ snapshot: AppSnapshot) throws -> Data { try JSONEncoder().encode(snapshot) }
     public static func decode(_ data: Data) throws -> AppSnapshot {
         let value = try JSONDecoder().decode(AppSnapshot.self, from: data)

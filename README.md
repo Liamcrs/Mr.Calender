@@ -52,7 +52,9 @@ Config/                     Info.plist、Entitlements、隐私配置
 
 ## 课表导入
 
-在“日历”页面点击“导入课表”，选择 `.ics` 文件并为课表命名。已导入的课表可独立启用、隐藏、重新导入和删除。解析器目前实现的 RFC 5545 子集包括 `DAILY`、`WEEKLY`、`INTERVAL`、`COUNT`、`UNTIL`、未编号的每周 `BYDAY`、`EXDATE`、`RDATE`、`RECURRENCE-ID` 以及 Foundation 时区；规则展开范围受限，以避免异常文件造成无限计算。
+在“日历”页面点击“导入课表”，先为课表命名，再选择 `.ics` 文件。已导入的课表可独立启用、隐藏、重新导入和删除。重新导入会用新文件替换该课表的全部课程，未包含在新文件中的旧课程会被删除；仅含取消记录的文件可能清空全部课程。课表的身份、名称和启用／隐藏状态保持不变，其他课表不受影响。导入和删除仅在本地保存成功后生效。
+
+解析器目前实现的 RFC 5545 子集包括 `DAILY`、`WEEKLY`、`INTERVAL`、`COUNT`、`UNTIL`、未编号的每周 `BYDAY`、`EXDATE`、`RDATE`、`RECURRENCE-ID` 以及 Foundation 时区；规则展开范围受限，以避免异常文件造成无限计算。
 
 ## 测试
 

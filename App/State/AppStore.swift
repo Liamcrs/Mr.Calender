@@ -3,7 +3,12 @@ import SwiftUI
 
 @MainActor
 final class AppStore: ObservableObject {
-    @Published var snapshot: AppSnapshot { didSet { save(); if isReady { refreshReminders() } } }
+    @Published var snapshot: AppSnapshot {
+        didSet {
+            if !isPublishingPersistedSnapshot { save() }
+            if isReady { refreshReminders() }
+        }
+    }
     @Published var selectedDate = Date()
     @Published var reminders: [PlannedReminder] = []
     @Published var banner: String? { didSet { restartBannerDismissal() } }
@@ -11,7 +16,11 @@ final class AppStore: ObservableObject {
     private let photosDirectory: URL
     private let calendar: Calendar
     private var isReady = false
+    private var isPublishingPersistedSnapshot = false
     private var bannerDismissTask: Task<Void, Never>?
+    private let notificationScheduler = LatestNotificationScheduler { queue in
+        await NotificationService.shared.schedule(queue)
+    }
 
     init() {
         var c = Calendar(identifier: .gregorian); c.timeZone = .current; calendar = c
@@ -34,7 +43,17 @@ final class AppStore: ObservableObject {
         reminders = SchedulePlanner.reminders(snapshot, from: window.start, to: window.end, calendar: calendar)
         if isReady { scheduleNotifications() }
     }
-    func scheduleNotifications() { let queue = reminders; Task { await NotificationService.shared.schedule(queue) } }
+    func scheduleNotifications() { notificationScheduler.submit(reminders) }
+
+    private func commit(_ updated: AppSnapshot) throws {
+        try SnapshotStore.commit(updated, write: { data in
+            try data.write(to: url, options: [.atomic, .completeFileProtection])
+        }, publish: { persisted in
+            isPublishingPersistedSnapshot = true
+            defer { isPublishingPersistedSnapshot = false }
+            snapshot = persisted
+        })
+    }
     func setReminder(_ reminder: PlannedReminder, status: ReminderStatus, snoozedUntil: Date? = nil) {
         snapshot.reminderRecords.removeAll { $0.id == reminder.id }
         snapshot.reminderRecords.append(.init(id: reminder.id, status: status, snoozedUntil: snoozedUntil))
@@ -74,7 +93,7 @@ final class AppStore: ObservableObject {
                 try updated.addTimetable(name: timetableName, events: result.events, importedAt: now)
             }
 
-            snapshot = updated
+            try commit(updated)
             banner = "已导入 \(result.events.count) 项课程"
         } catch { banner = "课表导入失败：\(error.localizedDescription)" }
     }
@@ -84,8 +103,12 @@ final class AppStore: ObservableObject {
     }
 
     func deleteTimetable(id: UUID) {
-        snapshot.removeTimetable(id: id)
-        banner = "已删除课表及其课程"
+        var updated = snapshot
+        updated.removeTimetable(id: id)
+        do {
+            try commit(updated)
+            banner = "已删除课表及其课程"
+        } catch { banner = "课表删除失败：\(error.localizedDescription)" }
     }
 
     func deleteEvent(id: String) {

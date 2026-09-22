@@ -129,10 +129,13 @@ struct TimetableManagementView: View {
                     Text("\(store.snapshot.events(for: timetable.id).count) 节课程 · 导入于 \(timetable.importedAt.formatted(date: .abbreviated, time: .shortened))")
                         .font(.caption)
                         .foregroundStyle(.secondary)
-                    Button("重新导入") {
+                    Button("重新导入并替换") {
                         reimportingTimetableID = timetable.id
                         showingImporter = true
                     }
+                    Text("新文件将替换此课表的全部课程，未包含的旧课程会被删除。")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
                 .swipeActions {
                     Button("删除", role: .destructive) {
