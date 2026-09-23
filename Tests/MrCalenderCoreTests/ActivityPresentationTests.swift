@@ -101,25 +101,35 @@ final class ActivityPresentationTests: XCTestCase {
         XCTAssertEqual(recordOnly[1].workoutText, "步行 20 分钟 · 手动")
     }
 
-    func testConcreteDateLabelsIncludeYearOnlyAcrossYearBoundary() {
-        let today = date("2027-01-02T12:00:00")
-        XCTAssertEqual(
-            ActivityPresentation.dateLabel(
-                date("2027-01-01T00:00:00"),
-                relativeTo: today,
-                calendar: calendar,
-                locale: Locale(identifier: "zh_CN")
-            ),
-            "1月1日"
-        )
-        XCTAssertEqual(
-            ActivityPresentation.dateLabel(
-                date("2026-12-31T00:00:00"),
-                relativeTo: today,
-                calendar: calendar,
-                locale: Locale(identifier: "zh_CN")
-            ),
-            "2026年12月31日"
-        )
+    func testLocalizedNumericDateLabelsIncludeYearOnlyAcrossYearBoundary() {
+        let today = date("2027-01-03T12:00:00")
+        let cases = [
+            (locale: "zh_CN", sameYear: "1/2", priorYear: "2026/12/31"),
+            (locale: "en_US", sameYear: "1/2", priorYear: "12/31/2026"),
+            (locale: "en_GB", sameYear: "02/01", priorYear: "31/12/2026")
+        ]
+
+        for item in cases {
+            XCTAssertEqual(
+                ActivityPresentation.dateLabel(
+                    date("2027-01-02T00:00:00"),
+                    relativeTo: today,
+                    calendar: calendar,
+                    locale: Locale(identifier: item.locale)
+                ),
+                item.sameYear,
+                item.locale
+            )
+            XCTAssertEqual(
+                ActivityPresentation.dateLabel(
+                    date("2026-12-31T00:00:00"),
+                    relativeTo: today,
+                    calendar: calendar,
+                    locale: Locale(identifier: item.locale)
+                ),
+                item.priorYear,
+                item.locale
+            )
+        }
     }
 }

@@ -33,6 +33,7 @@
 		000000000000000000000423 /* Views/DecoratedCalendarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000121 /* Views/DecoratedCalendarView.swift */; };
 		000000000000000000000424 /* MrCalenderCore/ActivityPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000210 /* MrCalenderCore/ActivityPresentation.swift */; };
 		000000000000000000000425 /* Views/ActivitySummaryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000122 /* Views/ActivitySummaryView.swift */; };
+		000000000000000000000426 /* MrCalenderCore/ActivitySummaryQueryRange.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000211 /* MrCalenderCore/ActivitySummaryQueryRange.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -63,6 +64,7 @@
 		000000000000000000000208 /* MrCalenderCore/LatestNotificationScheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MrCalenderCore/LatestNotificationScheduler.swift; sourceTree = "<group>"; };
 		000000000000000000000209 /* MrCalenderCore/CalendarIndicators.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MrCalenderCore/CalendarIndicators.swift; sourceTree = "<group>"; };
 		000000000000000000000210 /* MrCalenderCore/ActivityPresentation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MrCalenderCore/ActivityPresentation.swift; sourceTree = "<group>"; };
+		000000000000000000000211 /* MrCalenderCore/ActivitySummaryQueryRange.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MrCalenderCore/ActivitySummaryQueryRange.swift; sourceTree = "<group>"; };
 		000000000000000000000300 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		000000000000000000000301 /* MrCalender.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MrCalender.entitlements; sourceTree = "<group>"; };
 		000000000000000000000302 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
@@ -124,6 +126,7 @@
 				000000000000000000000208 /* MrCalenderCore/LatestNotificationScheduler.swift */,
 				000000000000000000000209 /* MrCalenderCore/CalendarIndicators.swift */,
 				000000000000000000000210 /* MrCalenderCore/ActivityPresentation.swift */,
+				000000000000000000000211 /* MrCalenderCore/ActivitySummaryQueryRange.swift */,
 				000000000000000000000205 /* Package.swift */,
 			);
 			path = Sources;
@@ -221,6 +224,7 @@
 				000000000000000000000423 /* Views/DecoratedCalendarView.swift in Sources */,
 				000000000000000000000424 /* MrCalenderCore/ActivityPresentation.swift in Sources */,
 				000000000000000000000425 /* Views/ActivitySummaryView.swift in Sources */,
+				000000000000000000000426 /* MrCalenderCore/ActivitySummaryQueryRange.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

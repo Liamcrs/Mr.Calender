@@ -98,24 +98,30 @@ final class CalendarIndicatorTests: XCTestCase {
     }
 
     func testIndicatorUsesSuppliedCalendarDayBoundary() {
-        var utc = Calendar(identifier: .gregorian)
-        utc.timeZone = TimeZone(secondsFromGMT: 0)!
+        var tokyo = Calendar(identifier: .gregorian)
+        tokyo.timeZone = TimeZone(identifier: "Asia/Tokyo")!
+        let day = ISO8601DateFormatter().date(from: "2026-12-25T00:00:00+09:00")!
         let event = CalendarEvent(
             title: "午夜事务",
-            startsAt: ISO8601DateFormatter().date(from: "2026-09-23T00:30:00Z")!,
-            endsAt: ISO8601DateFormatter().date(from: "2026-09-23T01:00:00Z")!,
+            startsAt: ISO8601DateFormatter().date(from: "2026-12-25T01:00:00+09:00")!,
+            endsAt: ISO8601DateFormatter().date(from: "2026-12-25T02:00:00+09:00")!,
             source: .custom
         )
         var snapshot = AppSnapshot()
         snapshot.events = [event]
 
+        // Both instants are Christmas in Tokyo, but straddle midnight in Shanghai.
         XCTAssertEqual(
             CalendarIndicators.indicators(
-                on: ISO8601DateFormatter().date(from: "2026-09-23T12:00:00Z")!,
+                on: day,
                 snapshot: snapshot,
-                calendar: utc
+                calendar: tokyo
             ),
-            [.customEvent]
+            [.holiday, .customEvent]
+        )
+        XCTAssertEqual(
+            CalendarIndicators.indicators(on: day, snapshot: snapshot, calendar: calendar),
+            []
         )
     }
 }

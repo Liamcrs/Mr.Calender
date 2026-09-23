@@ -63,8 +63,9 @@ public enum ActivityPresentation {
         formatter.calendar = calendar
         formatter.timeZone = calendar.timeZone
         formatter.locale = locale
-        formatter.dateFormat = calendar.component(.year, from: date) == calendar.component(.year, from: today)
-            ? "M月d日" : "yyyy年M月d日"
+        let template = calendar.component(.year, from: date) == calendar.component(.year, from: today)
+            ? "Md" : "yMd"
+        formatter.setLocalizedDateFormatFromTemplate(template)
         return formatter.string(from: date)
     }
 }

@@ -22,3 +22,38 @@ public enum CalendarIndicators {
         return DayIndicator.allCases.filter(values.contains)
     }
 }
+
+/// Event categories by civil day, independent of event titles, IDs, and counts.
+public struct CalendarDecorationState: Equatable {
+    private let categoriesByDay: [DateComponents: Set<DayIndicator>]
+
+    public init(snapshot: AppSnapshot, calendar: Calendar) {
+        var categories: [DateComponents: Set<DayIndicator>] = [:]
+        for event in snapshot.activeEvents {
+            let day = calendar.dateComponents([.era, .year, .month, .day], from: event.startsAt)
+            categories[day, default: []].insert(event.source == .course ? .course : .customEvent)
+        }
+        categoriesByDay = categories
+    }
+
+    public func datesToReload(
+        comparedTo previous: Self,
+        visibleMonth: DateComponents,
+        calendar: Calendar,
+        configurationChanged: Bool = false
+    ) -> [DateComponents] {
+        guard configurationChanged || self != previous,
+              visibleMonth.year != nil, visibleMonth.month != nil,
+              let visibleDate = calendar.date(from: visibleMonth),
+              let month = calendar.dateInterval(of: .month, for: visibleDate),
+              let days = calendar.range(of: .day, in: .month, for: visibleDate) else { return [] }
+
+        // Offscreen dates are supplied by the delegate when their month appears.
+        return days.compactMap { day in
+            guard let date = calendar.date(byAdding: .day, value: day - days.lowerBound, to: month.start) else { return nil }
+            let components = calendar.dateComponents([.era, .year, .month, .day], from: date)
+            return configurationChanged || categoriesByDay[components] != previous.categoriesByDay[components]
+                ? components : nil
+        }
+    }
+}

@@ -2,6 +2,7 @@ import SwiftUI
 import UIKit
 
 struct DecoratedCalendarView: UIViewRepresentable {
+    @Environment(\.locale) private var locale
     @Binding var selectedDate: Date
     let snapshot: AppSnapshot
     var calendar: Calendar = .current
@@ -11,44 +12,73 @@ struct DecoratedCalendarView: UIViewRepresentable {
     func makeUIView(context: Context) -> UICalendarView {
         let view = UICalendarView()
         view.calendar = calendar
-        view.locale = .current
         view.timeZone = calendar.timeZone
+        view.locale = locale
         view.delegate = context.coordinator
         view.wantsDateDecorations = true
         let selection = UICalendarSelectionSingleDate(delegate: context.coordinator)
-        selection.setSelected(calendar.dateComponents([.year, .month, .day], from: selectedDate), animated: false)
+        selection.setSelected(selectedComponents, animated: false)
         view.selectionBehavior = selection
         return view
     }
 
     func updateUIView(_ view: UICalendarView, context: Context) {
-        let oldState = context.coordinator.decorationState
-        context.coordinator.parent = self
-        let newState = DecorationState(snapshot: snapshot, calendar: calendar)
-        let selected = calendar.dateComponents([.year, .month, .day], from: selectedDate)
+        let coordinator = context.coordinator
+        let oldState = coordinator.decorationState
+        let configurationChanged = coordinator.configuration != configuration
+        coordinator.parent = self
+        coordinator.isUpdating = true
+        defer { coordinator.isUpdating = false }
+
+        // Update UIKit before it interprets selection components or asks for dots.
+        if configurationChanged {
+            view.calendar = calendar
+            view.timeZone = calendar.timeZone
+            view.locale = locale
+            coordinator.configuration = configuration
+        }
+        let newState = CalendarDecorationState(snapshot: snapshot, calendar: calendar)
+        coordinator.decorationState = newState
         if let selection = view.selectionBehavior as? UICalendarSelectionSingleDate,
-           selection.selectedDate != selected {
-            selection.setSelected(selected, animated: false)
+           configurationChanged || selection.selectedDate.flatMap({ calendar.date(from: $0) })
+                .map({ calendar.isDate($0, inSameDayAs: selectedDate) }) != true {
+            selection.setSelected(selectedComponents, animated: false)
         }
-        if oldState != newState {
-            context.coordinator.decorationState = newState
-            let changed = Array(oldState.dates.union(newState.dates))
-            if !changed.isEmpty { view.reloadDecorations(forDateComponents: changed, animated: true) }
+        let changed = newState.datesToReload(
+            comparedTo: oldState,
+            visibleMonth: view.visibleDateComponents,
+            calendar: calendar,
+            configurationChanged: configurationChanged
+        )
+        if !changed.isEmpty {
+            view.reloadDecorations(forDateComponents: changed, animated: !configurationChanged)
         }
+    }
+
+    private var selectedComponents: DateComponents {
+        calendar.dateComponents([.calendar, .timeZone, .era, .year, .month, .day], from: selectedDate)
+    }
+
+    private var configuration: CalendarConfiguration {
+        CalendarConfiguration(calendar: calendar, locale: locale)
     }
 
     @MainActor
     final class Coordinator: NSObject, UICalendarViewDelegate, UICalendarSelectionSingleDateDelegate {
         var parent: DecoratedCalendarView
-        fileprivate var decorationState: DecorationState
+        fileprivate var decorationState: CalendarDecorationState
+        fileprivate var configuration: CalendarConfiguration
+        fileprivate var isUpdating = false
 
         init(parent: DecoratedCalendarView) {
             self.parent = parent
-            decorationState = DecorationState(snapshot: parent.snapshot, calendar: parent.calendar)
+            decorationState = CalendarDecorationState(snapshot: parent.snapshot, calendar: parent.calendar)
+            configuration = parent.configuration
         }
 
         func dateSelection(_ selection: UICalendarSelectionSingleDate, didSelectDate dateComponents: DateComponents?) {
-            guard let dateComponents, let date = parent.calendar.date(from: dateComponents) else { return }
+            guard !isUpdating, let dateComponents,
+                  let date = parent.calendar.date(from: dateComponents) else { return }
             parent.selectedDate = date
         }
 
@@ -70,28 +100,9 @@ struct DecoratedCalendarView: UIViewRepresentable {
     }
 }
 
-private struct DecorationInput: Hashable {
-    let date: DateComponents
-    let indicator: DayIndicator
-}
-
-private struct DecorationState: Equatable {
-    let inputs: [DecorationInput]
-
-    init(snapshot: AppSnapshot, calendar: Calendar) {
-        inputs = Set(snapshot.activeEvents.map { event in
-            DecorationInput(
-                date: calendar.dateComponents([.year, .month, .day], from: event.startsAt),
-                indicator: event.source == .course ? .course : .customEvent
-            )
-        }).sorted { left, right in
-            let leftKey = [left.date.year ?? 0, left.date.month ?? 0, left.date.day ?? 0, left.indicator.rawValue]
-            let rightKey = [right.date.year ?? 0, right.date.month ?? 0, right.date.day ?? 0, right.indicator.rawValue]
-            return leftKey.lexicographicallyPrecedes(rightKey)
-        }
-    }
-
-    var dates: Set<DateComponents> { Set(inputs.map(\.date)) }
+private struct CalendarConfiguration: Equatable {
+    let calendar: Calendar
+    let locale: Locale
 }
 
 private final class DayIndicatorDots: UIStackView {

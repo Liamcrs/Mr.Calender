@@ -5,8 +5,7 @@ public struct HolidayLabel: Equatable, Sendable { public let name: String; publi
 
 public enum HolidayProvider {
     public static func labels(on date: Date, calendar: Calendar = .current) -> [HolidayLabel] {
-        var c = calendar; c.timeZone = TimeZone(identifier: "Asia/Shanghai") ?? .current
-        let comps = c.dateComponents([.year, .month, .day], from: date)
+        let comps = calendar.dateComponents([.year, .month, .day], from: date)
         guard let year = comps.year, let month = comps.month, let day = comps.day else { return [] }
         var labels: [HolidayLabel] = []
         if month == 1 && day == 1 { labels.append(.init(name: "元旦", kind: .holiday)) }

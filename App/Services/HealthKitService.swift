@@ -43,18 +43,14 @@ final class HealthKitService {
 
     func activitySummaries(from start: Date, to end: Date, calendar: Calendar) async throws -> [DailyActivitySummary] {
         guard start <= end else { return [] }
-        var queryCalendar = Calendar(identifier: .gregorian)
-        queryCalendar.timeZone = calendar.timeZone
-        let fields: Set<Calendar.Component> = [.era, .year, .month, .day]
-        let startComponents = queryCalendar.dateComponents(fields, from: start)
-        let endComponents = queryCalendar.dateComponents(fields, from: end)
+        let range = ActivitySummaryQueryRange(from: start, to: end, calendar: calendar)
         let predicate = HKQuery.predicate(
-            forActivitySummariesBetweenStart: startComponents,
-            end: endComponents
+            forActivitySummariesBetweenStart: range.start,
+            end: range.end
         )
         let descriptor = HKActivitySummaryQueryDescriptor(predicate: predicate)
         return try await descriptor.result(for: store).compactMap { summary in
-            map(summary, calendar: queryCalendar)
+            map(summary, calendar: range.calendar)
         }
     }
 
