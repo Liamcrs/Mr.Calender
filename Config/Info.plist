@@ -9,7 +9,7 @@
 <key>CFBundleShortVersionString</key><string>0.1</string>
 <key>CFBundleVersion</key><string>1</string>
 <key>LSRequiresIPhoneOS</key><true/>
-<key>NSHealthShareUsageDescription</key><string>Mr. Calender 读取你授权的运动记录，用于匹配运动提醒并自动记录完成情况。</string>
+<key>NSHealthShareUsageDescription</key><string>Mr. Calender 读取你授权的运动记录和活动摘要，用于展示训练历史以及活动、锻炼和站立圆环。</string>
 <key>NSHealthUpdateUsageDescription</key><string>Mr. Calender 不会写入健康数据；此说明用于支持未来的健康扩展。</string>
 <key>NSUserNotificationsUsageDescription</key><string>Mr. Calender 需要通知权限提醒课程、喝水、运动、饮食和睡眠。</string>
 <key>UIBackgroundModes</key><array><string>processing</string></array>
