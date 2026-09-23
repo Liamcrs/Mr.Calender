@@ -18,35 +18,33 @@ struct DecoratedCalendarView: UIViewRepresentable {
         let selection = UICalendarSelectionSingleDate(delegate: context.coordinator)
         selection.setSelected(calendar.dateComponents([.year, .month, .day], from: selectedDate), animated: false)
         view.selectionBehavior = selection
-        context.coordinator.decoratedDates = context.coordinator.eventDates(snapshot)
         return view
     }
 
     func updateUIView(_ view: UICalendarView, context: Context) {
-        let oldDates = context.coordinator.decoratedDates
+        let oldState = context.coordinator.decorationState
         context.coordinator.parent = self
-        let newDates = context.coordinator.eventDates(snapshot)
-        context.coordinator.decoratedDates = newDates
+        let newState = DecorationState(snapshot: snapshot, calendar: calendar)
         let selected = calendar.dateComponents([.year, .month, .day], from: selectedDate)
         if let selection = view.selectionBehavior as? UICalendarSelectionSingleDate,
            selection.selectedDate != selected {
             selection.setSelected(selected, animated: false)
         }
-        let changed = Array(oldDates.union(newDates))
-        if !changed.isEmpty { view.reloadDecorations(forDateComponents: changed, animated: true) }
+        if oldState != newState {
+            context.coordinator.decorationState = newState
+            let changed = Array(oldState.dates.union(newState.dates))
+            if !changed.isEmpty { view.reloadDecorations(forDateComponents: changed, animated: true) }
+        }
     }
 
     @MainActor
     final class Coordinator: NSObject, UICalendarViewDelegate, UICalendarSelectionSingleDateDelegate {
         var parent: DecoratedCalendarView
-        var decoratedDates = Set<DateComponents>()
+        fileprivate var decorationState: DecorationState
 
-        init(parent: DecoratedCalendarView) { self.parent = parent }
-
-        func eventDates(_ snapshot: AppSnapshot) -> Set<DateComponents> {
-            Set(snapshot.events.map {
-                parent.calendar.dateComponents([.year, .month, .day], from: $0.startsAt)
-            })
+        init(parent: DecoratedCalendarView) {
+            self.parent = parent
+            decorationState = DecorationState(snapshot: parent.snapshot, calendar: parent.calendar)
         }
 
         func dateSelection(_ selection: UICalendarSelectionSingleDate, didSelectDate dateComponents: DateComponents?) {
@@ -72,6 +70,30 @@ struct DecoratedCalendarView: UIViewRepresentable {
     }
 }
 
+private struct DecorationInput: Hashable {
+    let date: DateComponents
+    let indicator: DayIndicator
+}
+
+private struct DecorationState: Equatable {
+    let inputs: [DecorationInput]
+
+    init(snapshot: AppSnapshot, calendar: Calendar) {
+        inputs = Set(snapshot.activeEvents.map { event in
+            DecorationInput(
+                date: calendar.dateComponents([.year, .month, .day], from: event.startsAt),
+                indicator: event.source == .course ? .course : .customEvent
+            )
+        }).sorted { left, right in
+            let leftKey = [left.date.year ?? 0, left.date.month ?? 0, left.date.day ?? 0, left.indicator.rawValue]
+            let rightKey = [right.date.year ?? 0, right.date.month ?? 0, right.date.day ?? 0, right.indicator.rawValue]
+            return leftKey.lexicographicallyPrecedes(rightKey)
+        }
+    }
+
+    var dates: Set<DateComponents> { Set(inputs.map(\.date)) }
+}
+
 private final class DayIndicatorDots: UIStackView {
     init(indicators: [DayIndicator]) {
         super.init(frame: .zero)
@@ -86,7 +108,7 @@ private final class DayIndicatorDots: UIStackView {
             dot.translatesAutoresizingMaskIntoConstraints = false
             dot.backgroundColor = indicator.color
             dot.layer.cornerRadius = 2.5
-            dot.layer.borderColor = UIColor.systemBackground.cgColor
+            dot.layer.borderColor = UIColor.white.withAlphaComponent(0.8).cgColor
             dot.layer.borderWidth = 0.75
             NSLayoutConstraint.activate([
                 dot.widthAnchor.constraint(equalToConstant: 5),
