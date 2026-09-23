@@ -82,3 +82,26 @@ public enum SnapshotStore {
         return value
     }
 }
+
+/// Coordinates a persisted snapshot change with its user-visible result.
+/// Publication and success feedback only happen after the write succeeds.
+public enum SnapshotOperationCoordinator {
+    @discardableResult
+    public static func commit(
+        _ snapshot: AppSnapshot,
+        successMessage: String,
+        failureMessage: (Error) -> String,
+        write: (Data) throws -> Void,
+        publish: (AppSnapshot) -> Void,
+        showBanner: (String) -> Void
+    ) -> Bool {
+        do {
+            try SnapshotStore.commit(snapshot, write: write, publish: publish)
+            showBanner(successMessage)
+            return true
+        } catch {
+            showBanner(failureMessage(error))
+            return false
+        }
+    }
+}

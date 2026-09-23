@@ -26,3 +26,20 @@ public final class LatestNotificationScheduler {
         }
     }
 }
+
+/// Applies full replacement semantics to pending notification requests.
+/// Existing requests are cleared even when authorization has since been denied.
+public enum PendingNotificationReplacement {
+    public static func replace<Item>(
+        _ items: [Item],
+        removeAllPending: () -> Void,
+        isAuthorized: () async -> Bool,
+        add: (Item) async -> Void
+    ) async {
+        removeAllPending()
+        guard await isAuthorized() else { return }
+        for item in items {
+            await add(item)
+        }
+    }
+}

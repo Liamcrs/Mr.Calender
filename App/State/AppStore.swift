@@ -45,14 +45,21 @@ final class AppStore: ObservableObject {
     }
     func scheduleNotifications() { notificationScheduler.submit(reminders) }
 
-    private func commit(_ updated: AppSnapshot) throws {
-        try SnapshotStore.commit(updated, write: { data in
-            try data.write(to: url, options: [.atomic, .completeFileProtection])
-        }, publish: { persisted in
-            isPublishingPersistedSnapshot = true
-            defer { isPublishingPersistedSnapshot = false }
-            snapshot = persisted
-        })
+    private func commit(_ updated: AppSnapshot, successMessage: String, failurePrefix: String) {
+        SnapshotOperationCoordinator.commit(
+            updated,
+            successMessage: successMessage,
+            failureMessage: { "\(failurePrefix)：\($0.localizedDescription)" },
+            write: { data in
+                try data.write(to: url, options: [.atomic, .completeFileProtection])
+            },
+            publish: { persisted in
+                isPublishingPersistedSnapshot = true
+                defer { isPublishingPersistedSnapshot = false }
+                snapshot = persisted
+            },
+            showBanner: { banner = $0 }
+        )
     }
     func setReminder(_ reminder: PlannedReminder, status: ReminderStatus, snoozedUntil: Date? = nil) {
         snapshot.reminderRecords.removeAll { $0.id == reminder.id }
@@ -93,8 +100,11 @@ final class AppStore: ObservableObject {
                 try updated.addTimetable(name: timetableName, events: result.events, importedAt: now)
             }
 
-            try commit(updated)
-            banner = "已导入 \(result.events.count) 项课程"
+            commit(
+                updated,
+                successMessage: "已导入 \(result.events.count) 项课程",
+                failurePrefix: "课表导入失败"
+            )
         } catch { banner = "课表导入失败：\(error.localizedDescription)" }
     }
 
@@ -105,10 +115,7 @@ final class AppStore: ObservableObject {
     func deleteTimetable(id: UUID) {
         var updated = snapshot
         updated.removeTimetable(id: id)
-        do {
-            try commit(updated)
-            banner = "已删除课表及其课程"
-        } catch { banner = "课表删除失败：\(error.localizedDescription)" }
+        commit(updated, successMessage: "已删除课表及其课程", failurePrefix: "课表删除失败")
     }
 
     func deleteEvent(id: String) {
