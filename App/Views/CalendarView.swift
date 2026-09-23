@@ -19,9 +19,13 @@ struct CalendarView: View {
     var body: some View {
         NavigationStack {
             VStack {
-                DatePicker("选择日期", selection: $store.selectedDate, displayedComponents: .date)
-                    .datePickerStyle(.graphical)
-                    .padding(.horizontal)
+                DecoratedCalendarView(
+                    selectedDate: $store.selectedDate,
+                    snapshot: store.snapshot,
+                    calendar: .current
+                )
+                .frame(minHeight: 340)
+                .padding(.horizontal)
                 List {
                     let labels = HolidayProvider.labels(on: store.selectedDate)
                     if !labels.isEmpty {

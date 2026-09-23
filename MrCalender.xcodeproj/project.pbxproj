@@ -29,6 +29,8 @@
 		000000000000000000000419 /* MrCalenderCore/WorkoutHistory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000206 /* MrCalenderCore/WorkoutHistory.swift */; };
 		000000000000000000000420 /* MrCalenderCore/Timetables.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000207 /* MrCalenderCore/Timetables.swift */; };
 		000000000000000000000421 /* MrCalenderCore/LatestNotificationScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000208 /* MrCalenderCore/LatestNotificationScheduler.swift */; };
+		000000000000000000000422 /* MrCalenderCore/CalendarIndicators.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000209 /* MrCalenderCore/CalendarIndicators.swift */; };
+		000000000000000000000423 /* Views/DecoratedCalendarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000121 /* Views/DecoratedCalendarView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -46,6 +48,7 @@
 		000000000000000000000110 /* Services/HealthKitService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/HealthKitService.swift; sourceTree = "<group>"; };
 		000000000000000000000111 /* Services/AIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/AIService.swift; sourceTree = "<group>"; };
 		000000000000000000000120 /* Services/ReportExtractor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/ReportExtractor.swift; sourceTree = "<group>"; };
+		000000000000000000000121 /* Views/DecoratedCalendarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/DecoratedCalendarView.swift; sourceTree = "<group>"; };
 		000000000000000000000200 /* MrCalenderCore/Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MrCalenderCore/Models.swift; sourceTree = "<group>"; };
 		000000000000000000000201 /* MrCalenderCore/Planning.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MrCalenderCore/Planning.swift; sourceTree = "<group>"; };
 		000000000000000000000202 /* MrCalenderCore/FoodAndStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MrCalenderCore/FoodAndStorage.swift; sourceTree = "<group>"; };
@@ -55,6 +58,7 @@
 		000000000000000000000206 /* MrCalenderCore/WorkoutHistory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MrCalenderCore/WorkoutHistory.swift; sourceTree = "<group>"; };
 		000000000000000000000207 /* MrCalenderCore/Timetables.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MrCalenderCore/Timetables.swift; sourceTree = "<group>"; };
 		000000000000000000000208 /* MrCalenderCore/LatestNotificationScheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MrCalenderCore/LatestNotificationScheduler.swift; sourceTree = "<group>"; };
+		000000000000000000000209 /* MrCalenderCore/CalendarIndicators.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MrCalenderCore/CalendarIndicators.swift; sourceTree = "<group>"; };
 		000000000000000000000300 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		000000000000000000000301 /* MrCalender.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MrCalender.entitlements; sourceTree = "<group>"; };
 		000000000000000000000302 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
@@ -89,6 +93,7 @@
 				000000000000000000000103 /* Views/RootView.swift */,
 				000000000000000000000104 /* Views/TodayView.swift */,
 				000000000000000000000105 /* Views/CalendarView.swift */,
+				000000000000000000000121 /* Views/DecoratedCalendarView.swift */,
 				000000000000000000000106 /* Views/HealthView.swift */,
 				000000000000000000000107 /* Views/FoodView.swift */,
 				000000000000000000000108 /* Views/SettingsView.swift */,
@@ -112,6 +117,7 @@
 				000000000000000000000206 /* MrCalenderCore/WorkoutHistory.swift */,
 				000000000000000000000207 /* MrCalenderCore/Timetables.swift */,
 				000000000000000000000208 /* MrCalenderCore/LatestNotificationScheduler.swift */,
+				000000000000000000000209 /* MrCalenderCore/CalendarIndicators.swift */,
 				000000000000000000000205 /* Package.swift */,
 			);
 			path = Sources;
@@ -205,6 +211,8 @@
 				000000000000000000000419 /* MrCalenderCore/WorkoutHistory.swift in Sources */,
 				000000000000000000000420 /* MrCalenderCore/Timetables.swift in Sources */,
 				000000000000000000000421 /* MrCalenderCore/LatestNotificationScheduler.swift in Sources */,
+				000000000000000000000422 /* MrCalenderCore/CalendarIndicators.swift in Sources */,
+				000000000000000000000423 /* Views/DecoratedCalendarView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
