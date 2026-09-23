@@ -8,9 +8,26 @@ struct HealthView: View {
     @State private var isConnectingHealth = false
     @State private var healthStatus: String?
     @State private var healthRecords: [WorkoutRecord] = []
+    @State private var activitySummaries: [DailyActivitySummary] = []
+    @State private var activityStatus: String?
     @State private var showingAddWorkout = false
 
     private static let healthService = HealthKitService()
+
+    private var activityRange: (start: Date, end: Date) {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        return (calendar.date(byAdding: .day, value: -3, to: today)!, today)
+    }
+
+    private var activityDays: [ActivityDay] {
+        ActivityPresentation.days(
+            today: Date(),
+            summaries: activitySummaries,
+            records: allRecords,
+            calendar: .current
+        )
+    }
 
     private var historyRange: (start: Date, end: Date) {
         let calendar = Calendar.current
@@ -36,9 +53,9 @@ struct HealthView: View {
     var body: some View {
         NavigationStack {
             Form {
+                workoutSection
                 waterSection
                 sleepSection
-                workoutSection
                 agentSection
             }
             .dismissKeyboardOnTap()
@@ -81,6 +98,14 @@ struct HealthView: View {
 
     private var workoutSection: some View {
         Section("今日运动记录") {
+            ActivitySummaryCard(days: activityDays, today: Date())
+
+            if let activityStatus {
+                Text(activityStatus)
+                    .font(.caption)
+                    .foregroundStyle(activityStatus.hasPrefix("活动摘要读取失败") ? .red : .secondary)
+            }
+
             Button { Task { await refreshHealth(requestAccess: true, announceEmpty: true) } } label: {
                 if isConnectingHealth {
                     HStack { ProgressView(); Text("正在读取…") }
@@ -93,7 +118,7 @@ struct HealthView: View {
             if let healthStatus {
                 Text(healthStatus)
                     .font(.caption)
-                    .foregroundStyle(healthStatus.hasPrefix("读取失败") ? .red : .secondary)
+                    .foregroundStyle(healthStatus.hasPrefix("运动记录读取失败") ? .red : .secondary)
             }
 
             if todayRecords.isEmpty {
@@ -153,19 +178,44 @@ struct HealthView: View {
         defer { isConnectingHealth = false }
         do {
             if requestAccess { _ = try await Self.healthService.requestAccess() }
+        } catch {
+            let message = "健康权限请求失败：\(error.localizedDescription)"
+            healthStatus = message
+            activityStatus = message
+            if requestAccess { store.banner = message }
+            return
+        }
+
+        do {
             let workouts = try await Self.healthService.workouts(from: historyRange.start, to: historyRange.end)
             healthRecords = workouts.map(workoutRecord)
-            if healthRecords.isEmpty {
-                healthStatus = announceEmpty
-                    ? "近 30 天未读取到运动。HealthKit 不会透露读取权限是否被拒绝；请确认健康 App 中已允许 Mr. Calender 读取“体能训练”，并等待 Apple Watch 数据同步。"
-                    : nil
-            } else {
-                healthStatus = "已从 Apple 健康读取近 30 天 \(healthRecords.count) 条运动。"
-                if requestAccess { store.banner = "Apple 健康记录已更新" }
-            }
+            healthStatus = healthRecords.isEmpty && announceEmpty
+                ? "近 30 天未读取到运动，请检查健康权限和 Apple Watch 同步。"
+                : healthRecords.isEmpty ? nil : "已读取近 30 天 \(healthRecords.count) 条运动。"
         } catch {
-            healthStatus = "读取失败：\(error.localizedDescription)"
-            if requestAccess { store.banner = healthStatus }
+            healthStatus = "运动记录读取失败：\(error.localizedDescription)"
+        }
+
+        do {
+            activitySummaries = try await Self.healthService.activitySummaries(
+                from: activityRange.start,
+                to: activityRange.end,
+                calendar: .current
+            )
+            activityStatus = activitySummaries.isEmpty
+                ? "未读取到活动摘要，请检查健康权限和 Apple Watch 同步。"
+                : nil
+        } catch {
+            activityStatus = "活动摘要读取失败：\(error.localizedDescription)"
+        }
+
+        if requestAccess {
+            if !healthRecords.isEmpty || !activitySummaries.isEmpty {
+                store.banner = "Apple 健康记录已更新"
+            } else if healthStatus?.hasPrefix("运动记录读取失败") != true
+                && activityStatus?.hasPrefix("活动摘要读取失败") != true {
+                store.banner = "未读取到健康数据，请检查权限和 Apple Watch 同步"
+            }
         }
     }
 
