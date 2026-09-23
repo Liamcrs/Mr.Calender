@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct ActivitySummaryCard: View {
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     let days: [ActivityDay]
     let today: Date
     var calendar: Calendar = .current
@@ -9,38 +10,55 @@ struct ActivitySummaryCard: View {
     private var previousDays: ArraySlice<ActivityDay> { days.dropFirst().prefix(3) }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            HStack(alignment: .center, spacing: 12) {
-                VStack(spacing: 8) {
-                    ActivityRings(summary: todayDay?.summary, date: todayDay?.date ?? today, size: 128)
-                    Text(label(for: todayDay?.date ?? today))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    ActivityValues(summary: todayDay?.summary)
-                }
-                .frame(maxWidth: .infinity)
-
-                VStack(spacing: 8) {
-                    ForEach(Array(previousDays), id: \.date) { day in
-                        HStack(spacing: 8) {
-                            ActivityRings(summary: day.summary, date: day.date, size: 42)
-                            VStack(alignment: .leading, spacing: 3) {
-                                Text(label(for: day.date)).font(.caption.bold())
-                                Text(day.workoutText)
-                                    .font(.caption2)
-                                    .foregroundStyle(.secondary)
-                                    .lineLimit(1)
-                            }
-                            Spacer(minLength: 0)
-                        }
-                        .padding(8)
-                        .background(.secondary.opacity(0.08), in: RoundedRectangle(cornerRadius: 12))
-                    }
-                }
-                .frame(maxWidth: .infinity)
-            }
+        let layout = dynamicTypeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(spacing: 14))
+            : AnyLayout(HStackLayout(alignment: .center, spacing: 12))
+        layout {
+            todayPanel
+            previousDaysPanel
         }
         .accessibilityElement(children: .contain)
+    }
+
+    private var todayPanel: some View {
+        VStack(spacing: 8) {
+            ActivityRings(summary: todayDay?.summary, date: todayDay?.date ?? today, size: 128)
+            Text(label(for: todayDay?.date ?? today))
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            ActivityValues(summary: todayDay?.summary)
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    private var previousDaysPanel: some View {
+        VStack(spacing: 8) {
+            ForEach(Array(previousDays), id: \.date) { day in
+                HStack(spacing: 8) {
+                    ActivityRings(summary: day.summary, date: day.date, size: 42)
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(label(for: day.date)).font(.caption.bold())
+                        if day.records.count == 1, let record = day.records.first {
+                            Text("\(record.title) \(record.minutes) 分钟")
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                            Text(record.source.title)
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                        } else {
+                            Text(day.workoutText)
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    .fixedSize(horizontal: false, vertical: true)
+                    Spacer(minLength: 0)
+                }
+                .padding(8)
+                .background(.secondary.opacity(0.08), in: RoundedRectangle(cornerRadius: 12))
+            }
+        }
+        .frame(maxWidth: .infinity)
     }
 
     private func label(for date: Date) -> String {
@@ -49,19 +67,23 @@ struct ActivitySummaryCard: View {
 }
 
 private struct ActivityValues: View {
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     let summary: DailyActivitySummary?
 
     var body: some View {
-        HStack(spacing: 7) {
-            value(summary?.activeEnergy ?? 0, unit: "千卡", color: .pink)
-            value(summary?.exerciseMinutes ?? 0, unit: "分钟", color: .green)
-            value(summary?.standHours ?? 0, unit: "小时", color: .cyan)
+        let layout = dynamicTypeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(spacing: 7))
+            : AnyLayout(HStackLayout(spacing: 7))
+        layout {
+            value(summary?.activeEnergy, unit: "千卡", color: .pink)
+            value(summary?.exerciseMinutes, unit: "分钟", color: .green)
+            value(summary?.standHours, unit: "小时", color: .cyan)
         }
     }
 
-    private func value(_ number: Double, unit: String, color: Color) -> some View {
+    private func value(_ number: Double?, unit: String, color: Color) -> some View {
         VStack(spacing: 1) {
-            Text(number.formatted(.number.precision(.fractionLength(0))))
+            Text(activityNumber(number))
                 .font(.caption.bold())
                 .foregroundStyle(color)
             Text(unit).font(.caption2).foregroundStyle(.secondary)
@@ -98,7 +120,11 @@ private struct ActivityRings: View {
 
     private var accessibilityText: String {
         let dateText = date.formatted(.dateTime.year().month().day())
-        guard let summary else { return "\(dateText)，没有读取到活动摘要" }
-        return "\(dateText)，活动 \(Int(summary.activeEnergy)) 千卡，目标 \(Int(summary.activeEnergyGoal)) 千卡；锻炼 \(Int(summary.exerciseMinutes)) 分钟，目标 \(Int(summary.exerciseGoal)) 分钟；站立 \(Int(summary.standHours)) 小时，目标 \(Int(summary.standGoal)) 小时"
+        return "\(dateText)，活动（千卡），当前值 \(activityNumber(summary?.activeEnergy))，目标 \(activityNumber(summary?.activeEnergyGoal))；锻炼（分钟），当前值 \(activityNumber(summary?.exerciseMinutes))，目标 \(activityNumber(summary?.exerciseGoal))；站立（小时），当前值 \(activityNumber(summary?.standHours))，目标 \(activityNumber(summary?.standGoal))"
     }
+}
+
+private func activityNumber(_ number: Double?) -> String {
+    guard let number, number.isFinite else { return "不可用" }
+    return number.formatted(.number.precision(.fractionLength(0)))
 }

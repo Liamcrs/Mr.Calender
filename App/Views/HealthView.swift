@@ -186,8 +186,12 @@ struct HealthView: View {
             return
         }
 
+        var didReadHealthData = false
+        var hasFreshHealthData = false
         do {
             let workouts = try await Self.healthService.workouts(from: historyRange.start, to: historyRange.end)
+            didReadHealthData = true
+            hasFreshHealthData = !workouts.isEmpty
             healthRecords = workouts.map(workoutRecord)
             healthStatus = healthRecords.isEmpty && announceEmpty
                 ? "近 30 天未读取到运动，请检查健康权限和 Apple Watch 同步。"
@@ -202,6 +206,8 @@ struct HealthView: View {
                 to: activityRange.end,
                 calendar: .current
             )
+            didReadHealthData = true
+            hasFreshHealthData = hasFreshHealthData || !activitySummaries.isEmpty
             activityStatus = activitySummaries.isEmpty
                 ? "未读取到活动摘要，请检查健康权限和 Apple Watch 同步。"
                 : nil
@@ -210,11 +216,12 @@ struct HealthView: View {
         }
 
         if requestAccess {
-            if !healthRecords.isEmpty || !activitySummaries.isEmpty {
+            if hasFreshHealthData {
                 store.banner = "Apple 健康记录已更新"
-            } else if healthStatus?.hasPrefix("运动记录读取失败") != true
-                && activityStatus?.hasPrefix("活动摘要读取失败") != true {
+            } else if didReadHealthData {
                 store.banner = "未读取到健康数据，请检查权限和 Apple Watch 同步"
+            } else {
+                store.banner = "Apple 健康读取失败，请稍后重试"
             }
         }
     }
