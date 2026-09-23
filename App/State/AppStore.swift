@@ -3,7 +3,12 @@ import SwiftUI
 
 @MainActor
 final class AppStore: ObservableObject {
-    @Published var snapshot: AppSnapshot { didSet { save(); if isReady { refreshReminders() } } }
+    @Published var snapshot: AppSnapshot {
+        didSet {
+            if !isPublishingPersistedSnapshot { save() }
+            if isReady { refreshReminders() }
+        }
+    }
     @Published var selectedDate = Date()
     @Published var reminders: [PlannedReminder] = []
     @Published var banner: String? { didSet { restartBannerDismissal() } }
@@ -11,7 +16,11 @@ final class AppStore: ObservableObject {
     private let photosDirectory: URL
     private let calendar: Calendar
     private var isReady = false
+    private var isPublishingPersistedSnapshot = false
     private var bannerDismissTask: Task<Void, Never>?
+    private let notificationScheduler = LatestNotificationScheduler { queue in
+        await NotificationService.shared.schedule(queue)
+    }
 
     init() {
         var c = Calendar(identifier: .gregorian); c.timeZone = .current; calendar = c
@@ -29,21 +38,35 @@ final class AppStore: ObservableObject {
         do { let data = try SnapshotStore.encode(snapshot); try data.write(to: url, options: [.atomic, .completeFileProtection]) }
         catch { banner = "本地保存失败：\(error.localizedDescription)" }
     }
-    func refreshReminders() {
-        let from = calendar.startOfDay(for: selectedDate)
-        let to = calendar.date(byAdding: .day, value: 7, to: from)!
-        reminders = SchedulePlanner.reminders(snapshot, from: from, to: to, calendar: calendar)
+    func refreshReminders(now: Date = .now) {
+        let window = SchedulePlanner.planningWindow(startingAt: now, calendar: calendar)
+        reminders = SchedulePlanner.reminders(snapshot, from: window.start, to: window.end, calendar: calendar)
         if isReady { scheduleNotifications() }
     }
-    func scheduleNotifications() { let queue = reminders; Task { await NotificationService.shared.schedule(queue) } }
+    func scheduleNotifications() { notificationScheduler.submit(reminders) }
+
+    private func commit(_ updated: AppSnapshot, successMessage: String, failurePrefix: String) {
+        SnapshotOperationCoordinator.commit(
+            updated,
+            successMessage: successMessage,
+            failureMessage: { "\(failurePrefix)：\($0.localizedDescription)" },
+            write: { data in
+                try data.write(to: url, options: [.atomic, .completeFileProtection])
+            },
+            publish: { persisted in
+                isPublishingPersistedSnapshot = true
+                defer { isPublishingPersistedSnapshot = false }
+                snapshot = persisted
+            },
+            showBanner: { banner = $0 }
+        )
+    }
     func setReminder(_ reminder: PlannedReminder, status: ReminderStatus, snoozedUntil: Date? = nil) {
         snapshot.reminderRecords.removeAll { $0.id == reminder.id }
         snapshot.reminderRecords.append(.init(id: reminder.id, status: status, snoozedUntil: snoozedUntil))
-        refreshReminders()
     }
     func addEvent(title: String, date: Date, duration: TimeInterval = 3600, notes: String = "") {
         snapshot.events.append(.init(title: title, startsAt: date, endsAt: date.addingTimeInterval(duration), notes: notes))
-        refreshReminders()
     }
     func addDishPhoto(data: Data) throws -> String {
         let name = "\(UUID().uuidString).jpg"
@@ -62,15 +85,41 @@ final class AppStore: ObservableObject {
         }
         banner = "已删除饭店及其菜品"
     }
-    func importICS(_ text: String) {
+    func importICS(_ text: String, timetableName: String? = nil, replacing timetableID: UUID? = nil) {
         do {
-            let from = calendar.startOfDay(for: selectedDate), to = calendar.date(byAdding: .year, value: 1, to: from)!
-            let result = try ICSParser.parse(text, from: from, to: to, timeZone: calendar.timeZone)
-            snapshot.events.removeAll { event in event.importedUID.map(result.importedUIDs.contains) ?? false }
-            snapshot.events.append(contentsOf: result.events)
-            banner = "已导入 \(result.events.count) 项课程"
-            refreshReminders()
+            let now = Date.now
+            let window = SchedulePlanner.planningWindow(startingAt: now, calendar: calendar)
+            let importEnd = calendar.date(byAdding: .year, value: 1, to: window.start)!
+            let result = try ICSParser.parse(text, from: window.start, to: importEnd, timeZone: calendar.timeZone)
+            var updated = snapshot
+
+            if let timetableID {
+                try updated.replaceTimetable(id: timetableID, events: result.events, importedAt: now)
+            } else {
+                guard let timetableName else { throw TimetableError.emptyName }
+                try updated.addTimetable(name: timetableName, events: result.events, importedAt: now)
+            }
+
+            commit(
+                updated,
+                successMessage: "已导入 \(result.events.count) 项课程",
+                failurePrefix: "课表导入失败"
+            )
         } catch { banner = "课表导入失败：\(error.localizedDescription)" }
+    }
+
+    func setTimetableEnabled(id: UUID, isEnabled: Bool) {
+        snapshot.setTimetableEnabled(id: id, isEnabled: isEnabled)
+    }
+
+    func deleteTimetable(id: UUID) {
+        var updated = snapshot
+        updated.removeTimetable(id: id)
+        commit(updated, successMessage: "已删除课表及其课程", failurePrefix: "课表删除失败")
+    }
+
+    func deleteEvent(id: String) {
+        snapshot.removeEvent(id: id)
     }
 
     private func restartBannerDismissal() {

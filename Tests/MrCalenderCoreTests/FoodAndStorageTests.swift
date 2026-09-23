@@ -120,10 +120,10 @@ final class FoodAndStorageTests: XCTestCase {
         XCTAssertTrue(try SnapshotStore.decode(oldJSON).dishSkips.isEmpty)
     }
 
-    func testSchemaOneSnapshotMigratesToSchemaTwo() throws {
+    func testSchemaOneSnapshotMigratesToCurrentSchema() throws {
         var state = AppSnapshot(); state.schemaVersion = 1
         let decoded = try SnapshotStore.decode(SnapshotStore.encode(state))
-        XCTAssertEqual(decoded.schemaVersion, 2)
+        XCTAssertEqual(decoded.schemaVersion, 3)
         XCTAssertTrue(decoded.healthChat.isEmpty)
         XCTAssertTrue(decoded.profile.waterEnabled)
         XCTAssertTrue(decoded.profile.sleepEnabled)

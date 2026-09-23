@@ -24,11 +24,25 @@ struct TodayView: View {
                             }
                         }
                     }
-                    let events = store.snapshot.events.filter { $0.startsAt >= Date() && $0.startsAt < calendar.date(byAdding: .day, value: 7, to: Date())! }.sorted { $0.startsAt < $1.startsAt }
+                    let events = store.snapshot.activeEvents.filter { $0.startsAt >= Date() && $0.startsAt < calendar.date(byAdding: .day, value: 7, to: Date())! }.sorted { $0.startsAt < $1.startsAt }
                     if !events.isEmpty {
                         SectionCard(title: "未来课程和自定义安排") {
                             ForEach(events) { event in
-                                Label { VStack(alignment: .leading) { Text(event.title); Text(event.startsAt, format: .dateTime.month().day().hour().minute()).font(.caption).foregroundStyle(.secondary) } } icon: { Image(systemName: event.source == .course ? "graduationcap" : "calendar.badge.clock") }
+                                Label {
+                                    VStack(alignment: .leading) {
+                                        Text(event.title)
+                                        Text(event.startsAt, format: .dateTime.month().day().hour().minute())
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                        if !event.location.isEmpty {
+                                            Label(event.location, systemImage: "mappin.and.ellipse")
+                                                .font(.caption)
+                                                .foregroundStyle(.secondary)
+                                        }
+                                    }
+                                } icon: {
+                                    Image(systemName: "calendar.badge.clock")
+                                }
                             }
                         }
                     }

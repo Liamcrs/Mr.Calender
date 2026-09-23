@@ -19,6 +19,12 @@ public struct WorkoutProgress: Equatable, Sendable {
 }
 
 public enum SchedulePlanner {
+    public static func planningWindow(startingAt now: Date, calendar: Calendar) -> DateInterval {
+        let start = calendar.startOfDay(for: now)
+        let end = calendar.date(byAdding: .day, value: 7, to: start)!
+        return DateInterval(start: start, end: end)
+    }
+
     public static func sleepPlan(forMorning morning: Date, profile: HealthProfile, events: [CalendarEvent], calendar: Calendar) -> SleepPlan {
         let morningStart = calendar.startOfDay(for: morning)
         let firstTimedEvent = events.filter { !$0.isAllDay && $0.startsAt >= morningStart && $0.startsAt < calendar.date(byAdding: .day, value: 1, to: morningStart)! }.min { $0.startsAt < $1.startsAt }
@@ -38,8 +44,9 @@ public enum SchedulePlanner {
     }
 
     public static func reminders(_ state: AppSnapshot, from start: Date, to end: Date, calendar: Calendar) -> [PlannedReminder] {
+        let activeEvents = state.activeEvents
         var result: [PlannedReminder] = []
-        for event in state.events where event.startsAt >= start && event.startsAt < end {
+        for event in activeEvents where event.startsAt >= start && event.startsAt < end {
             if let minutes = event.reminderMinutes, minutes >= 0 {
                 let date = event.startsAt.addingTimeInterval(-Double(minutes * 60))
                 result.append(.init(id: "event-\(event.id)-\(Int(event.startsAt.timeIntervalSince1970))", kind: .event, title: event.title, detail: event.location, date: date))
@@ -47,12 +54,12 @@ public enum SchedulePlanner {
         }
         let profile = state.profile
         if profile.waterEnabled {
-            result.append(contentsOf: waterReminders(state, from: start, to: end, calendar: calendar))
+            result.append(contentsOf: waterReminders(state, events: activeEvents, from: start, to: end, calendar: calendar))
         }
         if profile.sleepEnabled {
             var morning = calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: start))!
             while morning < end {
-                result.append(contentsOf: sleepReminders(forMorning: morning, profile: profile, events: state.events, calendar: calendar).filter { $0.date >= start && $0.date < end })
+                result.append(contentsOf: sleepReminders(forMorning: morning, profile: profile, events: activeEvents, calendar: calendar).filter { $0.date >= start && $0.date < end })
                 morning = calendar.date(byAdding: .day, value: 1, to: morning)!
             }
         }
@@ -66,15 +73,15 @@ public enum SchedulePlanner {
         }.sorted { $0.date < $1.date }
     }
 
-    private static func waterReminders(_ state: AppSnapshot, from start: Date, to end: Date, calendar: Calendar) -> [PlannedReminder] {
+    private static func waterReminders(_ state: AppSnapshot, events: [CalendarEvent], from start: Date, to end: Date, calendar: Calendar) -> [PlannedReminder] {
         let interval = TimeInterval(max(30, state.profile.waterIntervalMinutes) * 60)
         let dayStart = calendar.startOfDay(for: start)
         var morning = dayStart
         var result: [PlannedReminder] = []
         while morning < end && result.count < 500 {
-            let wake = sleepPlan(forMorning: morning, profile: state.profile, events: state.events, calendar: calendar).wakeAt
+            let wake = sleepPlan(forMorning: morning, profile: state.profile, events: events, calendar: calendar).wakeAt
             let nextMorning = calendar.date(byAdding: .day, value: 1, to: morning)!
-            let bedtime = sleepPlan(forMorning: nextMorning, profile: state.profile, events: state.events, calendar: calendar).bedAt
+            let bedtime = sleepPlan(forMorning: nextMorning, profile: state.profile, events: events, calendar: calendar).bedAt
             let windowStart = max(start, wake)
             let windowEnd = min(end, bedtime)
             if windowStart < windowEnd {
@@ -82,7 +89,7 @@ public enum SchedulePlanner {
                 let steps = ceil(elapsed / interval)
                 var date = wake.addingTimeInterval(steps * interval)
                 while date < windowEnd && result.count < 500 {
-                    if !isBusy(date, events: state.events) {
+                    if !isBusy(date, events: events) {
                         let id = "water-\(Int(date.timeIntervalSince1970 / interval))"
                         result.append(.init(id: id, kind: .water, title: "喝水", detail: "约 \(state.profile.waterAmountML) ml", date: date))
                     }
