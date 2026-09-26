@@ -124,4 +124,10 @@ final class CalendarIndicatorTests: XCTestCase {
             []
         )
     }
+
+    func testDotLayoutProvidesExplicitWidthForSingleAndMultipleCategories() {
+        XCTAssertEqual(DayIndicatorDotLayout.width(count: 0), 0)
+        XCTAssertEqual(DayIndicatorDotLayout.width(count: 1), 5)
+        XCTAssertEqual(DayIndicatorDotLayout.width(count: 3), 19)
+    }
 }

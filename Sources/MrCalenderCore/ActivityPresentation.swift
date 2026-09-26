@@ -31,6 +31,20 @@ public struct DailyActivitySummary: Equatable, Sendable {
     }
 }
 
+public struct DailyActivityMetrics: Equatable, Sendable {
+    public let date: Date
+    public let activeEnergy: Double?
+    public let exerciseMinutes: Double?
+    public let standHours: Double?
+
+    public init(date: Date, activeEnergy: Double?, exerciseMinutes: Double?, standHours: Double?) {
+        self.date = date
+        self.activeEnergy = activeEnergy
+        self.exerciseMinutes = exerciseMinutes
+        self.standHours = standHours
+    }
+}
+
 public struct ActivityDay: Equatable, Sendable {
     public let date: Date
     public let summary: DailyActivitySummary?
@@ -46,6 +60,30 @@ public struct ActivityDay: Equatable, Sendable {
 }
 
 public enum ActivityPresentation {
+    public static func historicalSummaries(
+        _ summaries: [DailyActivitySummary], excluding today: Date, calendar: Calendar
+    ) -> [DailyActivitySummary] {
+        summaries.filter { !calendar.isDate($0.date, inSameDayAs: today) }
+    }
+
+    public static func standHourCount(sampleDates: [Date], calendar: Calendar) -> Int {
+        Set(sampleDates.map {
+            calendar.dateComponents([.era, .year, .month, .day, .hour], from: $0)
+        }).count
+    }
+
+    public static func values(
+        summary: DailyActivitySummary?, measured: DailyActivityMetrics?
+    ) -> DailyActivityMetrics? {
+        guard let summary else { return measured }
+        return DailyActivityMetrics(
+            date: summary.date,
+            activeEnergy: summary.activeEnergy,
+            exerciseMinutes: summary.exerciseMinutes,
+            standHours: summary.standHours
+        )
+    }
+
     public static func days(today: Date, summaries: [DailyActivitySummary],
                             records: [WorkoutRecord], calendar: Calendar) -> [ActivityDay] {
         let start = calendar.startOfDay(for: today)

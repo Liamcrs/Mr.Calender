@@ -28,6 +28,63 @@ final class ActivityPresentationTests: XCTestCase {
         XCTAssertEqual(summary.activeEnergy, 720)
     }
 
+    func testTodayValuesUseMeasuredDataWhenActivitySummaryIsMissing() {
+        let measured = DailyActivityMetrics(
+            date: date("2026-09-24T00:00:00"),
+            activeEnergy: 235,
+            exerciseMinutes: 18,
+            standHours: 6
+        )
+
+        XCTAssertEqual(ActivityPresentation.values(summary: nil, measured: measured), measured)
+    }
+
+    func testTodayValuesPreferOfficialSummaryOverMeasuredFallback() {
+        let day = date("2026-09-24T00:00:00")
+        let measured = DailyActivityMetrics(date: day, activeEnergy: 235, exerciseMinutes: 18, standHours: 6)
+        let summary = DailyActivitySummary(
+            date: day, activeEnergy: 240, activeEnergyGoal: 600,
+            exerciseMinutes: 20, exerciseGoal: 30, standHours: 7, standGoal: 12
+        )
+
+        XCTAssertEqual(
+            ActivityPresentation.values(summary: summary, measured: measured),
+            DailyActivityMetrics(date: day, activeEnergy: 240, exerciseMinutes: 20, standHours: 7)
+        )
+    }
+
+    func testStandHourCountDeduplicatesSamplesWithinTheSameLocalHour() {
+        XCTAssertEqual(
+            ActivityPresentation.standHourCount(
+                sampleDates: [
+                    date("2026-09-24T09:01:00"),
+                    date("2026-09-24T09:55:00"),
+                    date("2026-09-24T10:05:00")
+                ],
+                calendar: calendar
+            ),
+            2
+        )
+    }
+
+    func testFailedCurrentDayRefreshDropsOnlyStaleTodaySummary() {
+        let yesterday = DailyActivitySummary(
+            date: date("2026-09-23T00:00:00"), activeEnergy: 200, activeEnergyGoal: 600,
+            exerciseMinutes: 10, exerciseGoal: 30, standHours: 6, standGoal: 12
+        )
+        let today = DailyActivitySummary(
+            date: date("2026-09-24T00:00:00"), activeEnergy: 100, activeEnergyGoal: 600,
+            exerciseMinutes: 5, exerciseGoal: 30, standHours: 2, standGoal: 12
+        )
+
+        XCTAssertEqual(
+            ActivityPresentation.historicalSummaries(
+                [yesterday, today], excluding: date("2026-09-24T12:00:00"), calendar: calendar
+            ),
+            [yesterday]
+        )
+    }
+
     func testDaysIncludeTodayAndExactlyThreePreviousDates() {
         let today = date("2026-09-23T14:00:00")
         let days = ActivityPresentation.days(

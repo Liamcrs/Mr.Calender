@@ -4,6 +4,7 @@ import UIKit
 struct DecoratedCalendarView: UIViewRepresentable {
     @Environment(\.locale) private var locale
     @Binding var selectedDate: Date
+    @Binding var visibleMonth: DateComponents
     let snapshot: AppSnapshot
     var calendar: Calendar = .current
 
@@ -55,6 +56,17 @@ struct DecoratedCalendarView: UIViewRepresentable {
         }
     }
 
+    func sizeThatFits(_ proposal: ProposedViewSize, uiView: UICalendarView, context: Context) -> CGSize? {
+        guard let width = proposal.width, width > 0 else { return nil }
+        let target = CGSize(width: width, height: UIView.layoutFittingCompressedSize.height)
+        let fitted = uiView.systemLayoutSizeFitting(
+            target,
+            withHorizontalFittingPriority: .required,
+            verticalFittingPriority: .fittingSizeLevel
+        )
+        return CGSize(width: width, height: fitted.height)
+    }
+
     private var selectedComponents: DateComponents {
         calendar.dateComponents([.calendar, .timeZone, .era, .year, .month, .day], from: selectedDate)
     }
@@ -84,6 +96,18 @@ struct DecoratedCalendarView: UIViewRepresentable {
 
         func calendarView(
             _ calendarView: UICalendarView,
+            didChangeVisibleDateComponentsFrom previousDateComponents: DateComponents
+        ) {
+            let month = calendarView.visibleDateComponents
+            guard parent.visibleMonth != month else { return }
+            // A month with more week rows changes UIKit's fitting height. Tell
+            // SwiftUI's List to measure this row again without recreating it.
+            calendarView.invalidateIntrinsicContentSize()
+            parent.visibleMonth = month
+        }
+
+        func calendarView(
+            _ calendarView: UICalendarView,
             decorationFor dateComponents: DateComponents
         ) -> UICalendarView.Decoration? {
             guard let date = parent.calendar.date(from: dateComponents) else { return nil }
@@ -93,9 +117,7 @@ struct DecoratedCalendarView: UIViewRepresentable {
                 calendar: parent.calendar
             )
             guard !indicators.isEmpty else { return nil }
-            return .customView {
-                DayIndicatorDots(indicators: indicators)
-            }
+            return .image(DayIndicatorDots.image(for: indicators), color: nil, size: .large)
         }
     }
 }
@@ -105,31 +127,17 @@ private struct CalendarConfiguration: Equatable {
     let locale: Locale
 }
 
-private final class DayIndicatorDots: UIStackView {
-    init(indicators: [DayIndicator]) {
-        super.init(frame: .zero)
-        axis = .horizontal
-        spacing = 2
-        alignment = .center
-        distribution = .equalCentering
-        isAccessibilityElement = true
-        accessibilityLabel = indicators.map(\.accessibilityTitle).joined(separator: "、")
-        for indicator in indicators {
-            let dot = UIView(frame: CGRect(x: 0, y: 0, width: 5, height: 5))
-            dot.translatesAutoresizingMaskIntoConstraints = false
-            dot.backgroundColor = indicator.color
-            dot.layer.cornerRadius = 2.5
-            dot.layer.borderColor = UIColor.white.withAlphaComponent(0.8).cgColor
-            dot.layer.borderWidth = 0.75
-            NSLayoutConstraint.activate([
-                dot.widthAnchor.constraint(equalToConstant: 5),
-                dot.heightAnchor.constraint(equalToConstant: 5)
-            ])
-            addArrangedSubview(dot)
+private enum DayIndicatorDots {
+    static func image(for indicators: [DayIndicator]) -> UIImage {
+        let size = CGSize(width: DayIndicatorDotLayout.width(count: indicators.count), height: 5)
+        return UIGraphicsImageRenderer(size: size).image { _ in
+            for (index, indicator) in indicators.enumerated() {
+                indicator.color.setFill()
+                UIBezierPath(ovalIn: CGRect(x: index * 7, y: 0, width: 5, height: 5)).fill()
+            }
         }
+        .withRenderingMode(.alwaysOriginal)
     }
-
-    required init(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 }
 
 private extension DayIndicator {

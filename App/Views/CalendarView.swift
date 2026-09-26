@@ -7,6 +7,7 @@ struct CalendarView: View {
     @State private var showingImporter = false
     @State private var pendingTimetableName = ""
     @State private var showingAdd = false
+    @State private var visibleMonth = DateComponents()
 
     private var icsType: UTType { UTType(filenameExtension: "ics") ?? .data }
 
@@ -18,47 +19,47 @@ struct CalendarView: View {
 
     var body: some View {
         NavigationStack {
-            VStack {
+            List {
                 DecoratedCalendarView(
                     selectedDate: $store.selectedDate,
+                    visibleMonth: $visibleMonth,
                     snapshot: store.snapshot,
                     calendar: .current
                 )
-                .frame(minHeight: 340)
-                .padding(.horizontal)
-                List {
-                    let labels = HolidayProvider.labels(on: store.selectedDate)
-                    if !labels.isEmpty {
-                        Section("节日与调休") {
-                            ForEach(labels, id: \.name) { label in
-                                Text(label.name)
-                                    .foregroundStyle(label.kind == .workday ? .orange : .green)
+                .listRowInsets(EdgeInsets())
+                .listRowBackground(Color.clear)
+
+                let labels = HolidayProvider.labels(on: store.selectedDate)
+                if !labels.isEmpty {
+                    Section("节日与调休") {
+                        ForEach(labels, id: \.name) { label in
+                            Text(label.name)
+                                .foregroundStyle(label.kind == .workday ? .orange : .green)
+                        }
+                    }
+                }
+                Section("安排") {
+                    ForEach(selectedDayEvents) { event in
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(event.title)
+                            Text(event.startsAt, format: .dateTime.hour().minute())
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            if !event.location.isEmpty {
+                                Label(event.location, systemImage: "mappin.and.ellipse")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            if !event.presentationNotes.isEmpty {
+                                Text(event.presentationNotes)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
                             }
                         }
                     }
-                    Section("安排") {
-                        ForEach(selectedDayEvents) { event in
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(event.title)
-                                Text(event.startsAt, format: .dateTime.hour().minute())
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                                if !event.location.isEmpty {
-                                    Label(event.location, systemImage: "mappin.and.ellipse")
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
-                                if !event.presentationNotes.isEmpty {
-                                    Text(event.presentationNotes)
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
-                            }
-                        }
-                        .onDelete { offsets in
-                            let ids = offsets.map { selectedDayEvents[$0].id }
-                            for id in ids { store.deleteEvent(id: id) }
-                        }
+                    .onDelete { offsets in
+                        let ids = offsets.map { selectedDayEvents[$0].id }
+                        for id in ids { store.deleteEvent(id: id) }
                     }
                 }
             }

@@ -9,6 +9,7 @@ struct HealthView: View {
     @State private var healthStatus: String?
     @State private var healthRecords: [WorkoutRecord] = []
     @State private var activitySummaries: [DailyActivitySummary] = []
+    @State private var todayMetrics: DailyActivityMetrics?
     @State private var activityStatus: String?
     @State private var showingAddWorkout = false
 
@@ -98,7 +99,7 @@ struct HealthView: View {
 
     private var workoutSection: some View {
         Section("今日运动记录") {
-            ActivitySummaryCard(days: activityDays, today: Date())
+            ActivitySummaryCard(days: activityDays, today: Date(), measured: todayMetrics)
 
             if let activityStatus {
                 Text(activityStatus)
@@ -208,11 +209,26 @@ struct HealthView: View {
             )
             didReadHealthData = true
             hasFreshHealthData = hasFreshHealthData || !activitySummaries.isEmpty
-            activityStatus = activitySummaries.isEmpty
-                ? "未读取到活动摘要，请检查健康权限和 Apple Watch 同步。"
-                : nil
+            if activitySummaries.contains(where: { Calendar.current.isDateInToday($0.date) }) {
+                todayMetrics = nil
+                activityStatus = nil
+            } else {
+                todayMetrics = await Self.healthService.todayActivityMetrics(calendar: .current)
+                hasFreshHealthData = hasFreshHealthData || todayMetrics != nil
+                activityStatus = todayMetrics == nil
+                    ? "未读取到今日活动数据，请检查健康权限和 Apple Watch 同步。"
+                    : "今日活动数值来自 Apple 健康；今日圆环目标尚未返回，暂不显示圆环进度。"
+            }
         } catch {
+            activitySummaries = ActivityPresentation.historicalSummaries(
+                activitySummaries, excluding: Date(), calendar: .current
+            )
             activityStatus = "活动摘要读取失败：\(error.localizedDescription)"
+            todayMetrics = await Self.healthService.todayActivityMetrics(calendar: .current)
+            hasFreshHealthData = hasFreshHealthData || todayMetrics != nil
+            if todayMetrics != nil {
+                activityStatus = "今日活动数值来自 Apple 健康；活动摘要读取失败，暂不显示圆环进度。"
+            }
         }
 
         if requestAccess {

@@ -23,6 +23,13 @@ public enum CalendarIndicators {
     }
 }
 
+public enum DayIndicatorDotLayout {
+    public static func width(count: Int) -> Double {
+        guard count > 0 else { return 0 }
+        return Double(count * 5 + (count - 1) * 2)
+    }
+}
+
 /// Event categories by civil day, independent of event titles, IDs, and counts.
 public struct CalendarDecorationState: Equatable {
     private let categoriesByDay: [DateComponents: Set<DayIndicator>]

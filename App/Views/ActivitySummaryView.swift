@@ -4,6 +4,7 @@ struct ActivitySummaryCard: View {
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     let days: [ActivityDay]
     let today: Date
+    let measured: DailyActivityMetrics?
     var calendar: Calendar = .current
 
     private var todayDay: ActivityDay? { days.first }
@@ -26,7 +27,9 @@ struct ActivitySummaryCard: View {
             Text(label(for: todayDay?.date ?? today))
                 .font(.caption)
                 .foregroundStyle(.secondary)
-            ActivityValues(summary: todayDay?.summary)
+            ActivityValues(values: ActivityPresentation.values(
+                summary: todayDay?.summary, measured: measured
+            ))
         }
         .frame(maxWidth: .infinity)
     }
@@ -68,16 +71,16 @@ struct ActivitySummaryCard: View {
 
 private struct ActivityValues: View {
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
-    let summary: DailyActivitySummary?
+    let values: DailyActivityMetrics?
 
     var body: some View {
         let layout = dynamicTypeSize.isAccessibilitySize
             ? AnyLayout(VStackLayout(spacing: 7))
             : AnyLayout(HStackLayout(spacing: 7))
         layout {
-            value(summary?.activeEnergy, unit: "千卡", color: .pink)
-            value(summary?.exerciseMinutes, unit: "分钟", color: .green)
-            value(summary?.standHours, unit: "小时", color: .cyan)
+            value(values?.activeEnergy, unit: "千卡", color: .pink)
+            value(values?.exerciseMinutes, unit: "分钟", color: .green)
+            value(values?.standHours, unit: "小时", color: .cyan)
         }
     }
 
